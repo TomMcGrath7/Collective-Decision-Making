@@ -20,7 +20,7 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <SessionProvider>
         <Routes>
           <Route path="/" element={<Layout />}>
