@@ -31,7 +31,11 @@ export function Results() {
           winnerNames,
           isCurrent: m.id === selectedMechanism,
         };
-      } catch {
+      } catch (error) {
+        console.error(
+          'Failed to run voting mechanism for comparison:',
+          { mechanismId: m.id, mechanismName: m.name, error }
+        );
         return null;
       }
     }).filter((r): r is NonNullable<typeof r> => r !== null);
