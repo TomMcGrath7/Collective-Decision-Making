@@ -67,7 +67,7 @@ export function Layout() {
                 Learn More
               </Link>
               <a
-                href="https://github.com"
+                href="https://github.com/example/collective-decision-making"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-slate-500 hover:text-slate-700"
