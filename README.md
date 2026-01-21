@@ -49,7 +49,7 @@ The app covers 12 key axioms from social choice theory:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/Collective-Decision-Making.git
+git clone https://github.com/TomMcGrath7/Collective-Decision-Making.git
 cd Collective-Decision-Making
 
 # Install dependencies

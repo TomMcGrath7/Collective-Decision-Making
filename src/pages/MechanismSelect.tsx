@@ -64,7 +64,10 @@ function MechanismCard({
       </p>
 
       <details className="mb-3">
-        <summary className={`text-sm cursor-pointer ${isCompatible ? 'text-slate-500 hover:text-slate-700' : 'text-slate-400'}`}>
+        <summary
+          className={`text-sm cursor-pointer ${isCompatible ? 'text-slate-500 hover:text-slate-700' : 'text-slate-400'}`}
+          aria-label={`Show how ${mechanism.name} works`}
+        >
           How it works
         </summary>
         <p className={`text-sm mt-2 pl-3 border-l-2 ${isCompatible ? 'text-slate-600 border-slate-200' : 'text-slate-400 border-slate-100'}`}>

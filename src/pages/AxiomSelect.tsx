@@ -87,7 +87,10 @@ function AxiomCheckbox({
 
         {/* Expandable formal definition */}
         <details className="mt-2">
-          <summary className="text-xs text-slate-500 cursor-pointer hover:text-slate-700">
+          <summary
+            className="text-xs text-slate-500 cursor-pointer hover:text-slate-700"
+            aria-label={`Show technical details about ${axiom.name}`}
+          >
             {axiom.formalDefinition ? 'Technical definition' : 'More details'}
           </summary>
           <div className="text-xs text-slate-500 mt-1 pl-2 border-l-2 border-slate-200 space-y-1">

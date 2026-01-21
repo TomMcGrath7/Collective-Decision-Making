@@ -50,7 +50,9 @@ function loadGoogleAnalytics(): void {
     cookie_flags: 'SameSite=Strict;Secure', // GDPR: secure cookies
   });
 
-  console.log('[Analytics] Initialized with ID:', GA_MEASUREMENT_ID);
+  if (import.meta.env.DEV) {
+    console.log('[Analytics] Initialized with ID:', GA_MEASUREMENT_ID);
+  }
 }
 
 // Initialize Google Analytics (only if consent given)

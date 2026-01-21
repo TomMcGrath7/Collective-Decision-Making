@@ -4,6 +4,7 @@ import { useSession } from '../hooks/useSession';
 import type { VotingProblem, VotingPreference, Candidate } from '../types';
 import { votingMechanisms, runVotingMechanism } from '../lib/mechanisms/voting';
 import { exampleScenarios } from '../lib/examples';
+import { generateUUID } from '../lib/utils/uuid';
 
 interface VoterInputProps {
   voterIndex: number;
@@ -65,6 +66,7 @@ function VoterInput({
                 onClick={() => moveUp(index)}
                 disabled={index === 0}
                 className="text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed p-1"
+                aria-label={`Move ${getCandidateName(candidateId)} up`}
               >
                 ↑
               </button>
@@ -72,6 +74,7 @@ function VoterInput({
                 onClick={() => moveDown(index)}
                 disabled={index === ranking.length - 1}
                 className="text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed p-1"
+                aria-label={`Move ${getCandidateName(candidateId)} down`}
               >
                 ↓
               </button>
@@ -115,7 +118,7 @@ export function VotingInput() {
 
   const addCandidate = () => {
     if (!newCandidateName.trim()) return;
-    const id = crypto.randomUUID().slice(0, 8);
+    const id = generateUUID().slice(0, 8);
     const newCandidate = { id, name: newCandidateName.trim() };
     setCandidates([...candidates, newCandidate]);
     setVoters(voters.map((v) => ({ ...v, ranking: [...v.ranking, id] })));
@@ -137,7 +140,7 @@ export function VotingInput() {
 
   const addVoter = () => {
     const newVoter: VotingPreference = {
-      voterId: crypto.randomUUID(),
+      voterId: generateUUID(),
       ranking: candidates.map((c) => c.id),
     };
     setVoters([...voters, newVoter]);

@@ -258,11 +258,12 @@ export function instantRunoff(problem: VotingProblem): VotingResult {
     const minVotes = sortedByVotes[sortedByVotes.length - 1].votes;
     const eliminated = sortedByVotes.filter((c) => c.votes === minVotes);
 
-    // Eliminate the last one (or all tied for last if multiple)
-    const eliminatedId = eliminated[eliminated.length - 1].id;
-    rounds.push(`Round ${round}: ${roundSummary}\nEliminated: ${candidateNames[eliminatedId]} (${minVotes} votes)`);
+    // Eliminate all candidates tied for last place
+    const eliminatedIds = eliminated.map((c) => c.id);
+    const eliminatedNames = eliminatedIds.map((id) => candidateNames[id]).join(', ');
+    rounds.push(`Round ${round}: ${roundSummary}\nEliminated: ${eliminatedNames} (${minVotes} votes)`);
 
-    remainingCandidates = remainingCandidates.filter((id) => id !== eliminatedId);
+    remainingCandidates = remainingCandidates.filter((id) => !eliminatedIds.includes(id));
     round++;
   }
 
