@@ -53,7 +53,7 @@ export function ProblemSelect() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {problems.map((problem) => {
-          const isEnabled = problem.id === 'voting' || problem.id === 'fair-division' || problem.id === 'allocation';
+          const isEnabled = problem.id === 'voting' || problem.id === 'fair-division' || problem.id === 'allocation' || problem.id === 'matching';
           return (
             <button
               key={problem.id}

@@ -5,5 +5,6 @@ export { MechanismSelect } from './MechanismSelect';
 export { VotingInput } from './VotingInput';
 export { FairDivisionInput } from './FairDivisionInput';
 export { AllocationInput } from './AllocationInput';
+export { MatchingInput } from './MatchingInput';
 export { Results } from './Results';
 export { LearnMore } from './LearnMore';
