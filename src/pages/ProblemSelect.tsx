@@ -52,33 +52,36 @@ export function ProblemSelect() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {problems.map((problem) => (
-          <button
-            key={problem.id}
-            onClick={() => handleSelect(problem.id)}
-            disabled={problem.id !== 'voting' && problem.id !== 'fair-division'}
-            className={`text-left p-4 rounded-lg border transition-all ${
-              problem.id === 'voting' || problem.id === 'fair-division'
-                ? 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer'
-                : 'bg-slate-100 border-slate-200 cursor-not-allowed opacity-60'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">{problem.icon}</span>
-              <div>
-                <h3 className="font-semibold text-slate-800">
-                  {problem.name}
-                  {problem.id !== 'voting' && problem.id !== 'fair-division' && (
-                    <span className="ml-2 text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded">
-                      Coming soon
-                    </span>
-                  )}
-                </h3>
-                <p className="text-sm text-slate-600 mt-1">{problem.description}</p>
+        {problems.map((problem) => {
+          const isEnabled = problem.id === 'voting' || problem.id === 'fair-division' || problem.id === 'allocation';
+          return (
+            <button
+              key={problem.id}
+              onClick={() => handleSelect(problem.id)}
+              disabled={!isEnabled}
+              className={`text-left p-4 rounded-lg border transition-all ${
+                isEnabled
+                  ? 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer'
+                  : 'bg-slate-100 border-slate-200 cursor-not-allowed opacity-60'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">{problem.icon}</span>
+                <div>
+                  <h3 className="font-semibold text-slate-800">
+                    {problem.name}
+                    {!isEnabled && (
+                      <span className="ml-2 text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded">
+                        Coming soon
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-sm text-slate-600 mt-1">{problem.description}</p>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

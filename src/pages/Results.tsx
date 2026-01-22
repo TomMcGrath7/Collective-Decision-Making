@@ -4,9 +4,11 @@ import confetti from 'canvas-confetti';
 import { useSession } from '../hooks/useSession';
 import { votingMechanisms, runVotingMechanism } from '../lib/mechanisms/voting';
 import { fairDivisionMechanisms, runFairDivisionMechanism } from '../lib/mechanisms/fairDivision';
+import { allocationMechanisms, runAllocationMechanism } from '../lib/mechanisms/allocation';
 import { votingAxioms } from '../lib/axioms/voting';
 import { fairDivisionAxioms } from '../lib/axioms/fairDivision';
-import type { VotingProblem, VotingResult, FairDivisionProblem, FairDivisionResult } from '../types';
+import { allocationAxioms } from '../lib/axioms/allocation';
+import type { VotingProblem, VotingResult, FairDivisionProblem, FairDivisionResult, DivisibleAllocationProblem, DivisibleAllocationResult } from '../types';
 
 function VotingResults({
   mechanism,
@@ -536,6 +538,293 @@ function FairDivisionResults({
   );
 }
 
+function AllocationResults({
+  mechanism,
+  problem,
+  result,
+  selectedAxioms,
+  allMechanismResults,
+}: {
+  mechanism: typeof allocationMechanisms[0];
+  problem: DivisibleAllocationProblem;
+  result: DivisibleAllocationResult;
+  selectedAxioms: string[];
+  allMechanismResults: Array<{
+    mechanism: typeof allocationMechanisms[0];
+    result: DivisibleAllocationResult;
+    isCurrent: boolean;
+  }>;
+}) {
+  const getAgentName = (agentId: string) =>
+    problem.agents.find((a) => a.id === agentId)?.name || agentId;
+
+  // Generate colors for agents
+  const agentColors = ['bg-purple-400', 'bg-blue-400', 'bg-green-400', 'bg-amber-400', 'bg-pink-400', 'bg-cyan-400'];
+
+  const totalDemand = problem.agents.reduce((sum, a) => sum + a.demand, 0);
+  const totalAllocated = result.allocations.reduce((sum, a) => sum + a.amountReceived, 0);
+
+  return (
+    <>
+      <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-6 mb-6">
+        <p className="text-purple-100 text-sm mb-1">Allocation using {mechanism.name}</p>
+        <h1 className="text-3xl font-bold mb-2">{problem.resource.name} Allocated</h1>
+        <p className="text-purple-100 text-sm">
+          {totalAllocated.toFixed(2)} of {problem.resource.totalAmount} {problem.resource.unit} distributed among {problem.agents.length} participants
+        </p>
+      </div>
+
+      {/* Visual Allocation Bar */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-3">Allocation Visualization</h2>
+        <div className="relative h-12 bg-slate-100 rounded-lg overflow-hidden mb-4">
+          {result.allocations.map((allocation, index) => {
+            const startPercent = result.allocations
+              .slice(0, index)
+              .reduce((sum, a) => sum + a.percentageOfTotal, 0);
+            return (
+              <div
+                key={allocation.agentId}
+                className={`absolute top-0 bottom-0 flex items-center justify-center text-white font-medium text-sm ${agentColors[index % agentColors.length]}`}
+                style={{
+                  left: `${startPercent}%`,
+                  width: `${allocation.percentageOfTotal}%`,
+                }}
+              >
+                {allocation.percentageOfTotal > 8 && getAgentName(allocation.agentId)}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-xs text-slate-500">
+          <span>0%</span>
+          <span>25%</span>
+          <span>50%</span>
+          <span>75%</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Allocation Table */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <h2 className="font-semibold text-slate-800 mb-3">Allocation Summary</h2>
+          <div className="space-y-3">
+            {result.allocations.map((allocation, index) => {
+              const agent = problem.agents.find((a) => a.id === allocation.agentId)!;
+              return (
+                <div key={allocation.agentId} className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${agentColors[index % agentColors.length]}`} />
+                  <div className="flex-1">
+                    <div className="font-medium text-slate-800">
+                      {getAgentName(allocation.agentId)}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      Demanded: {agent.demand} {problem.resource.unit}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-slate-800">
+                      {allocation.amountReceived.toFixed(2)} {problem.resource.unit}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {allocation.percentageOfDemand.toFixed(1)}% satisfied
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Configuration */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <h2 className="font-semibold text-slate-800 mb-3">Configuration</h2>
+          <dl className="text-sm space-y-2">
+            <div>
+              <dt className="text-slate-500">Mechanism</dt>
+              <dd className="font-medium text-slate-800">{mechanism.name}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Resource</dt>
+              <dd className="font-medium text-slate-800">{problem.resource.name}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Total Available</dt>
+              <dd className="font-medium text-slate-800">{problem.resource.totalAmount} {problem.resource.unit}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Total Demand</dt>
+              <dd className="font-medium text-slate-800">{totalDemand} {problem.resource.unit}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Participants</dt>
+              <dd className="font-medium text-slate-800">{problem.agents.length}</dd>
+            </div>
+            {selectedAxioms.length > 0 && (
+              <div>
+                <dt className="text-slate-500">Required Axioms</dt>
+                <dd className="font-medium text-slate-800">
+                  {selectedAxioms
+                    .map((id) => allocationAxioms.find((a) => a.id === id)?.name)
+                    .join(', ')}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </div>
+
+      {/* Fairness Properties */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-3">Fairness Properties</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {result.fairnessProperties.map((prop) => (
+            <div
+              key={prop.property}
+              className={`p-3 rounded-lg border ${
+                prop.satisfied
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-slate-50 border-slate-200'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className={prop.satisfied ? 'text-green-600' : 'text-slate-400'}>
+                  {prop.satisfied ? '✓' : '✗'}
+                </span>
+                <span className={`font-medium ${prop.satisfied ? 'text-green-800' : 'text-slate-600'}`}>
+                  {prop.property}
+                </span>
+              </div>
+              <p className={`text-xs ${prop.satisfied ? 'text-green-700' : 'text-slate-500'}`}>
+                {prop.explanation}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Step-by-Step Explanation */}
+      {result.steps && result.steps.length > 0 && (
+        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+          <h2 className="font-semibold text-slate-800 mb-3">Step-by-Step Process</h2>
+          <div className="space-y-3">
+            {result.steps.map((step) => (
+              <div key={step.step} className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-medium">
+                  {step.step}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700">{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-3">How the Result Was Calculated</h2>
+        <div className="text-sm text-slate-600 whitespace-pre-line">
+          {result.explanation}
+        </div>
+      </div>
+
+      <div className="bg-purple-50 rounded-lg border border-purple-200 p-4 mb-6">
+        <h3 className="font-medium text-purple-800 mb-2">About {mechanism.name}</h3>
+        <p className="text-sm text-purple-700 mb-2">{mechanism.howItWorks}</p>
+        <details>
+          <summary className="text-sm text-purple-600 cursor-pointer hover:text-purple-700">
+            Satisfied fairness axioms
+          </summary>
+          <ul className="mt-2 text-sm text-purple-700 space-y-1">
+            {mechanism.satisfiedAxioms.map((axiomId) => {
+              const axiom = allocationAxioms.find((a) => a.id === axiomId);
+              return axiom ? (
+                <li key={axiomId}>
+                  <span className="font-medium">{axiom.name}</span>: {axiom.description}
+                </li>
+              ) : null;
+            })}
+          </ul>
+        </details>
+      </div>
+
+      {/* What If? Comparison Section */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-2">What If? Compare Mechanisms</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          See how the same allocation problem would be handled by different allocation mechanisms.
+        </p>
+
+        <div className="space-y-3">
+          {allMechanismResults.map(({ mechanism: m, isCurrent, result: r }) => {
+            // Check if results are similar (same percentages)
+            const currentPercentages = result.allocations.map((a) => a.percentageOfTotal).sort((x, y) => x - y);
+            const otherPercentages = r.allocations.map((a) => a.percentageOfTotal).sort((x, y) => x - y);
+            const sameResult = currentPercentages.length === otherPercentages.length &&
+              currentPercentages.every((p, i) => Math.abs(p - otherPercentages[i]) < 1);
+
+            return (
+              <div
+                key={m.id}
+                className={`p-3 rounded-lg border ${
+                  isCurrent
+                    ? 'bg-purple-50 border-purple-200'
+                    : sameResult
+                    ? 'bg-blue-50 border-blue-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium ${
+                        isCurrent ? 'text-purple-800' : sameResult ? 'text-blue-800' : 'text-amber-800'
+                      }`}>
+                        {m.name}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <div className={`text-sm mt-1 ${
+                      isCurrent ? 'text-purple-700' : sameResult ? 'text-blue-700' : 'text-amber-700'
+                    }`}>
+                      Allocation: {r.allocations.map((a) => `${a.amountReceived.toFixed(1)}`).join(' / ')} {problem.resource.unit}
+                    </div>
+                    <div className={`text-xs mt-1 ${
+                      isCurrent ? 'text-purple-600' : sameResult ? 'text-blue-600' : 'text-amber-600'
+                    }`}>
+                      Properties: {r.fairnessProperties.filter((p) => p.satisfied).map((p) => p.property).join(', ')}
+                    </div>
+                  </div>
+                  {!isCurrent && (
+                    <div className={`text-xs px-2 py-1 rounded ${
+                      sameResult ? 'bg-blue-200 text-blue-800' : 'bg-amber-200 text-amber-800'
+                    }`}>
+                      {sameResult ? 'Similar allocation' : 'Different allocation'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-200">
+          <p className="text-xs text-slate-500">
+            Different allocation mechanisms make different trade-offs between fairness properties.
+            When demand exceeds supply, the choice of mechanism significantly affects who gets what.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function Results() {
   const navigate = useNavigate();
   const { session, resetSession } = useSession();
@@ -543,15 +832,20 @@ export function Results() {
 
   const isVoting = problemType === 'voting';
   const isFairDivision = problemType === 'fair-division';
+  const isAllocation = problemType === 'allocation';
 
   const votingMechanism = isVoting ? votingMechanisms.find((m) => m.id === selectedMechanism) : null;
   const fairDivisionMechanism = isFairDivision ? fairDivisionMechanisms.find((m) => m.id === selectedMechanism) : null;
+  const allocationMechanism = isAllocation ? allocationMechanisms.find((m) => m.id === selectedMechanism) : null;
 
   const votingProblem = isVoting ? (problem as VotingProblem | null) : null;
   const votingResult = isVoting ? (result as VotingResult | null) : null;
 
   const fairDivisionProblem = isFairDivision ? (problem as FairDivisionProblem | null) : null;
   const fairDivisionResult = isFairDivision ? (result as FairDivisionResult | null) : null;
+
+  const allocationProblem = isAllocation ? (problem as DivisibleAllocationProblem | null) : null;
+  const allocationResult = isAllocation ? (result as DivisibleAllocationResult | null) : null;
 
   // Compute results for all voting mechanisms for "What if?" comparison
   const allVotingMechanismResults = useMemo(() => {
@@ -609,9 +903,31 @@ export function Results() {
     }).filter((r): r is NonNullable<typeof r> => r !== null);
   }, [fairDivisionProblem, selectedMechanism]);
 
+  // Compute results for all allocation mechanisms for "What if?" comparison
+  const allAllocationMechanismResults = useMemo(() => {
+    if (!allocationProblem) return [];
+
+    return allocationMechanisms.map((m) => {
+      try {
+        const result = runAllocationMechanism(m.id, allocationProblem);
+        return {
+          mechanism: m,
+          result,
+          isCurrent: m.id === selectedMechanism,
+        };
+      } catch (error) {
+        console.error(
+          'Failed to run allocation mechanism for comparison:',
+          { mechanismId: m.id, mechanismName: m.name, error }
+        );
+        return null;
+      }
+    }).filter((r): r is NonNullable<typeof r> => r !== null);
+  }, [allocationProblem, selectedMechanism]);
+
   // Trigger confetti on results display
   useEffect(() => {
-    if (votingResult || fairDivisionResult) {
+    if (votingResult || fairDivisionResult || allocationResult) {
       confetti({
         particleCount: 100,
         spread: 70,
@@ -619,7 +935,7 @@ export function Results() {
         colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
       });
     }
-  }, [votingResult, fairDivisionResult]);
+  }, [votingResult, fairDivisionResult, allocationResult]);
 
   const handleStartOver = () => {
     resetSession();
@@ -633,8 +949,9 @@ export function Results() {
   // Check if we have valid data
   const hasVotingData = isVoting && votingMechanism && votingProblem && votingResult;
   const hasFairDivisionData = isFairDivision && fairDivisionMechanism && fairDivisionProblem && fairDivisionResult;
+  const hasAllocationData = isAllocation && allocationMechanism && allocationProblem && allocationResult;
 
-  if (!hasVotingData && !hasFairDivisionData) {
+  if (!hasVotingData && !hasFairDivisionData && !hasAllocationData) {
     return (
       <div className="text-center py-12">
         <p className="text-slate-600 mb-4">No results to display.</p>
@@ -667,6 +984,16 @@ export function Results() {
           result={fairDivisionResult}
           selectedAxioms={selectedAxioms}
           allMechanismResults={allFairDivisionMechanismResults}
+        />
+      )}
+
+      {hasAllocationData && (
+        <AllocationResults
+          mechanism={allocationMechanism}
+          problem={allocationProblem}
+          result={allocationResult}
+          selectedAxioms={selectedAxioms}
+          allMechanismResults={allAllocationMechanismResults}
         />
       )}
 

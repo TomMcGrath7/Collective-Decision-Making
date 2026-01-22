@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { votingMechanisms } from '../lib/mechanisms/voting';
 import { fairDivisionMechanisms } from '../lib/mechanisms/fairDivision';
+import { allocationMechanisms } from '../lib/mechanisms/allocation';
 import { votingAxioms } from '../lib/axioms/voting';
 import { fairDivisionAxioms } from '../lib/axioms/fairDivision';
+import { allocationAxioms } from '../lib/axioms/allocation';
 import {
   getCompatibleMechanisms,
   getFailedAxioms,
@@ -14,6 +16,11 @@ import {
   getFailedFairDivisionAxioms,
   fairDivisionMechanismSatisfiesAxiom,
 } from '../lib/compatibility/fairDivision';
+import {
+  getCompatibleAllocationMechanisms,
+  getFailedAllocationAxioms,
+  allocationMechanismSatisfiesAxiom,
+} from '../lib/compatibility/allocation';
 import { useSession } from '../hooks/useSession';
 import type { Mechanism, Axiom } from '../types';
 
@@ -135,13 +142,34 @@ export function MechanismSelect() {
   const [showAll, setShowAll] = useState(false);
 
   const isFairDivision = problemType === 'fair-division';
+  const isAllocation = problemType === 'allocation';
 
   // Select the appropriate mechanisms, axioms, and compatibility functions
-  const mechanisms = isFairDivision ? fairDivisionMechanisms : votingMechanisms;
-  const axioms = isFairDivision ? fairDivisionAxioms : votingAxioms;
-  const getCompatible = isFairDivision ? getCompatibleFairDivisionMechanisms : getCompatibleMechanisms;
-  const getFailed = isFairDivision ? getFailedFairDivisionAxioms : getFailedAxioms;
-  const satisfiesAxiom = isFairDivision ? fairDivisionMechanismSatisfiesAxiom : mechanismSatisfiesAxiom;
+  const mechanisms = isAllocation
+    ? allocationMechanisms
+    : isFairDivision
+    ? fairDivisionMechanisms
+    : votingMechanisms;
+  const axioms = isAllocation
+    ? allocationAxioms
+    : isFairDivision
+    ? fairDivisionAxioms
+    : votingAxioms;
+  const getCompatible = isAllocation
+    ? getCompatibleAllocationMechanisms
+    : isFairDivision
+    ? getCompatibleFairDivisionMechanisms
+    : getCompatibleMechanisms;
+  const getFailed = isAllocation
+    ? getFailedAllocationAxioms
+    : isFairDivision
+    ? getFailedFairDivisionAxioms
+    : getFailedAxioms;
+  const satisfiesAxiom = isAllocation
+    ? allocationMechanismSatisfiesAxiom
+    : isFairDivision
+    ? fairDivisionMechanismSatisfiesAxiom
+    : mechanismSatisfiesAxiom;
 
   const compatibleMechanisms = useMemo(
     () => getCompatible(selectedAxioms),
@@ -161,7 +189,9 @@ export function MechanismSelect() {
   const handleContinue = () => {
     if (selectedMechanism) {
       // Navigate to the appropriate input page based on problem type
-      if (isFairDivision) {
+      if (isAllocation) {
+        navigate('/allocation-input');
+      } else if (isFairDivision) {
         navigate('/fair-division-input');
       } else {
         navigate('/input');

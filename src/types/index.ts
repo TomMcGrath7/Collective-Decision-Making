@@ -125,6 +125,46 @@ export interface FairDivisionProblem {
   cutterAgentId?: string; // For Cut-and-Choose: who cuts
 }
 
+// Divisible Resource Allocation specific types
+export interface DivisibleAllocationProblem {
+  resource: DivisibleResource;
+  agents: AllocationAgent[];
+}
+
+export interface DivisibleResource {
+  id: string;
+  name: string;
+  totalAmount: number;
+  unit: string; // "Mbps", "%", "$", etc.
+}
+
+export interface AllocationAgent {
+  id: string;
+  name: string;
+  demand: number;      // How much they want
+  weight?: number;     // For weighted allocation
+}
+
+export interface DivisibleAllocationResult {
+  allocations: AgentAllocation[];
+  explanation: string;
+  fairnessProperties: FairnessCheck[];
+  steps?: AllocationStep[];
+}
+
+export interface AgentAllocation {
+  agentId: string;
+  amountReceived: number;
+  percentageOfTotal: number;
+  percentageOfDemand: number; // satisfaction ratio
+}
+
+export interface AllocationStep {
+  step: number;
+  description: string;
+  currentAllocations: Record<string, number>;
+}
+
 export interface DivisibleGood {
   id: string;
   name: string;
@@ -158,8 +198,8 @@ export interface DecisionSession {
   problemType: ProblemType;
   selectedAxioms: string[];
   selectedMechanism: string | null;
-  problem: VotingProblem | AllocationProblem | FairDivisionProblem | null;
-  result: VotingResult | AllocationResult | FairDivisionResult | null;
+  problem: VotingProblem | AllocationProblem | FairDivisionProblem | DivisibleAllocationProblem | null;
+  result: VotingResult | AllocationResult | FairDivisionResult | DivisibleAllocationResult | null;
   startedAt: number;
 }
 

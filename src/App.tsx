@@ -9,6 +9,7 @@ import {
   MechanismSelect,
   VotingInput,
   FairDivisionInput,
+  AllocationInput,
   Results,
   LearnMore,
 } from './pages';
@@ -31,6 +32,7 @@ function App() {
             <Route path="mechanism" element={<MechanismSelect />} />
             <Route path="input" element={<VotingInput />} />
             <Route path="fair-division-input" element={<FairDivisionInput />} />
+            <Route path="allocation-input" element={<AllocationInput />} />
             <Route path="results" element={<Results />} />
             <Route path="learn" element={<LearnMore />} />
           </Route>
