@@ -176,7 +176,8 @@ export function AllocationInput() {
               <h2 className="font-semibold text-slate-800">Participants</h2>
               <button
                 onClick={addAgent}
-                className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                disabled={!newAgentName.trim()}
+                className="px-3 py-1.5 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
                 Add Participant
               </button>

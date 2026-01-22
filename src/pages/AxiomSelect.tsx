@@ -441,10 +441,10 @@ export function AxiomSelect() {
                 Understanding the trade-offs
               </h3>
               <ul className="text-xs text-blue-700 space-y-1">
-                <li>* <strong>Condorcet Winner</strong> = Only pairwise comparison works</li>
-                <li>* <strong>Majority</strong> = Eliminates Borda and Approval</li>
-                <li>* <strong>Monotonicity</strong> = Eliminates IRV</li>
-                <li>* <strong>IIA</strong> = Eliminates everything (Arrow's theorem)</li>
+                <li>• <strong>Condorcet Winner</strong> = Only pairwise comparison works</li>
+                <li>• <strong>Majority</strong> = Eliminates Borda and Approval</li>
+                <li>• <strong>Monotonicity</strong> = Eliminates IRV</li>
+                <li>• <strong>IIA</strong> = Eliminates everything (Arrow's theorem)</li>
               </ul>
             </div>
           )}
@@ -455,9 +455,9 @@ export function AxiomSelect() {
                 Mechanism Comparison
               </h3>
               <ul className="text-xs text-blue-700 space-y-1">
-                <li>* <strong>Cut-and-Choose</strong> = Simple, 2-person, envy-free</li>
-                <li>* <strong>Moving Knife</strong> = Works for any number of people</li>
-                <li>* <strong>Adjusted Winner</strong> = Best for 2-person divisions with many items</li>
+                <li>• <strong>Cut-and-Choose</strong> = Simple, 2-person, envy-free</li>
+                <li>• <strong>Moving Knife</strong> = Works for any number of people</li>
+                <li>• <strong>Adjusted Winner</strong> = Best for 2-person divisions with many items</li>
               </ul>
             </div>
           )}
@@ -468,9 +468,9 @@ export function AxiomSelect() {
                 Mechanism Comparison
               </h3>
               <ul className="text-xs text-purple-700 space-y-1">
-                <li>* <strong>Proportional Fairness</strong> = Allocates by demand ratio</li>
-                <li>* <strong>Max-Min Fairness</strong> = Maximizes minimum allocation</li>
-                <li>* <strong>Weighted Fair Queuing</strong> = Priority-based allocation</li>
+                <li>• <strong>Proportional Fairness</strong> = Allocates by demand ratio</li>
+                <li>• <strong>Max-Min Fairness</strong> = Maximizes minimum allocation</li>
+                <li>• <strong>Weighted Fair Queuing</strong> = Priority-based allocation</li>
               </ul>
             </div>
           )}
@@ -481,10 +481,10 @@ export function AxiomSelect() {
                 Mechanism Comparison
               </h3>
               <ul className="text-xs text-indigo-700 space-y-1">
-                <li>* <strong>Gale-Shapley</strong> = Stable matching, proposer-optimal</li>
-                <li>* <strong>Top Trading Cycle</strong> = Pareto efficient, strategy-proof</li>
-                <li>* <strong>Serial Dictatorship</strong> = Simple priority-based assignment</li>
-                <li>* <strong>Random Serial Dictatorship</strong> = Fair random priority</li>
+                <li>• <strong>Gale-Shapley</strong> = Stable matching, proposer-optimal</li>
+                <li>• <strong>Top Trading Cycle</strong> = Pareto efficient, strategy-proof</li>
+                <li>• <strong>Serial Dictatorship</strong> = Simple priority-based assignment</li>
+                <li>• <strong>Random Serial Dictatorship</strong> = Fair random priority</li>
               </ul>
             </div>
           )}
