@@ -125,6 +125,46 @@ export interface FairDivisionProblem {
   cutterAgentId?: string; // For Cut-and-Choose: who cuts
 }
 
+// Divisible Resource Allocation specific types
+export interface DivisibleAllocationProblem {
+  resource: DivisibleResource;
+  agents: AllocationAgent[];
+}
+
+export interface DivisibleResource {
+  id: string;
+  name: string;
+  totalAmount: number;
+  unit: string; // "Mbps", "%", "$", etc.
+}
+
+export interface AllocationAgent {
+  id: string;
+  name: string;
+  demand: number;      // How much they want
+  weight?: number;     // For weighted allocation
+}
+
+export interface DivisibleAllocationResult {
+  allocations: AgentAllocation[];
+  explanation: string;
+  fairnessProperties: FairnessCheck[];
+  steps?: AllocationStep[];
+}
+
+export interface AgentAllocation {
+  agentId: string;
+  amountReceived: number;
+  percentageOfTotal: number;
+  percentageOfDemand: number; // satisfaction ratio
+}
+
+export interface AllocationStep {
+  step: number;
+  description: string;
+  currentAllocations: Record<string, number>;
+}
+
 export interface DivisibleGood {
   id: string;
   name: string;
@@ -152,14 +192,55 @@ export interface FairDivisionStep {
   action: 'cut' | 'choose' | 'assign';
 }
 
+// Matching specific types
+export type MatchingType = 'one-to-one' | 'many-to-one' | 'assignment';
+
+export interface MatchingAgent {
+  id: string;
+  name: string;
+  side: 'A' | 'B';
+  capacity?: number; // For many-to-one matching (e.g., schools with seats)
+}
+
+export interface MatchingProblem {
+  type: MatchingType;
+  agentsSideA: MatchingAgent[]; // Proposers (e.g., students, applicants, people)
+  agentsSideB: MatchingAgent[]; // Receivers (e.g., schools, jobs, chores)
+  preferencesSideA: Record<string, string[]>; // agentId -> ranked list of agent ids from other side
+  preferencesSideB: Record<string, string[]>; // agentId -> ranked list of agent ids from other side (empty for assignment)
+  priorityOrder?: string[]; // For serial dictatorship - order of agents
+}
+
+export interface MatchingPair {
+  agentA: string; // Agent from side A
+  agentB: string; // Agent from side B
+}
+
+export interface MatchingStep {
+  step: number;
+  description: string;
+  currentMatches: MatchingPair[];
+  proposals?: { from: string; to: string }[];
+  rejections?: { by: string; rejected: string }[];
+}
+
+export interface MatchingResult {
+  matches: MatchingPair[];
+  unmatchedA: string[]; // Agents from side A who couldn't be matched
+  unmatchedB: string[]; // Agents from side B who couldn't be matched
+  explanation: string;
+  fairnessProperties: FairnessCheck[];
+  steps?: MatchingStep[];
+}
+
 // Session state
 export interface DecisionSession {
   id: string;
   problemType: ProblemType;
   selectedAxioms: string[];
   selectedMechanism: string | null;
-  problem: VotingProblem | AllocationProblem | FairDivisionProblem | null;
-  result: VotingResult | AllocationResult | FairDivisionResult | null;
+  problem: VotingProblem | AllocationProblem | FairDivisionProblem | DivisibleAllocationProblem | MatchingProblem | null;
+  result: VotingResult | AllocationResult | FairDivisionResult | DivisibleAllocationResult | MatchingResult | null;
   startedAt: number;
 }
 

@@ -2,8 +2,12 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAxiomsByCategory } from '../lib/axioms/voting';
 import { getFairDivisionAxiomsByCategory } from '../lib/axioms/fairDivision';
+import { getAllocationAxiomsByCategory } from '../lib/axioms/allocation';
+import { getMatchingAxiomsByCategory } from '../lib/axioms/matching';
 import { votingMechanisms } from '../lib/mechanisms/voting';
 import { fairDivisionMechanisms } from '../lib/mechanisms/fairDivision';
+import { allocationMechanisms } from '../lib/mechanisms/allocation';
+import { matchingMechanisms } from '../lib/mechanisms/matching';
 import {
   getCompatibleMechanisms,
   wouldEliminateAllMechanisms,
@@ -14,6 +18,16 @@ import {
   wouldEliminateAllFairDivisionMechanisms,
   getFailedFairDivisionAxioms,
 } from '../lib/compatibility/fairDivision';
+import {
+  getCompatibleAllocationMechanisms,
+  wouldEliminateAllAllocationMechanisms,
+  getFailedAllocationAxioms,
+} from '../lib/compatibility/allocation';
+import {
+  getCompatibleMatchingMechanisms,
+  wouldEliminateAllMatchingMechanisms,
+  getFailedMatchingAxioms,
+} from '../lib/compatibility/matching';
 import { useSession } from '../hooks/useSession';
 import type { Axiom, AxiomCategory, Mechanism } from '../types';
 
@@ -39,6 +53,22 @@ const fairDivisionCategoryDescriptions: Record<AxiomCategory, string> = {
   strategy: 'Properties about truthful reporting',
   monotonicity: 'Properties about resource changes',
   consistency: 'Properties about combining divisions',
+};
+
+const allocationCategoryDescriptions: Record<AxiomCategory, string> = {
+  efficiency: 'Properties about using all available resources',
+  fairness: 'Properties about fair shares and guarantees',
+  strategy: 'Properties about truthful demand reporting',
+  monotonicity: 'Properties about demand changes',
+  consistency: 'Properties about combining allocations',
+};
+
+const matchingCategoryDescriptions: Record<AxiomCategory, string> = {
+  efficiency: 'Properties about optimal matchings',
+  fairness: 'Properties about stability and individual rationality',
+  strategy: 'Properties about truthful preference reporting',
+  monotonicity: 'Properties about preference changes',
+  consistency: 'Properties about combining matchings',
 };
 
 function AxiomCheckbox({
@@ -159,14 +189,52 @@ export function AxiomSelect() {
   const { selectedAxioms, problemType } = session;
 
   const isFairDivision = problemType === 'fair-division';
+  const isAllocation = problemType === 'allocation';
+  const isMatching = problemType === 'matching';
 
   // Select the appropriate mechanisms and compatibility functions
-  const mechanisms = isFairDivision ? fairDivisionMechanisms : votingMechanisms;
-  const getAxiomsForCategory = isFairDivision ? getFairDivisionAxiomsByCategory : getAxiomsByCategory;
-  const getCompatible = isFairDivision ? getCompatibleFairDivisionMechanisms : getCompatibleMechanisms;
-  const wouldEliminateAll = isFairDivision ? wouldEliminateAllFairDivisionMechanisms : wouldEliminateAllMechanisms;
-  const getFailed = isFairDivision ? getFailedFairDivisionAxioms : getFailedAxioms;
-  const categoryDescriptions = isFairDivision ? fairDivisionCategoryDescriptions : votingCategoryDescriptions;
+  const mechanisms = isMatching
+    ? matchingMechanisms
+    : isAllocation
+    ? allocationMechanisms
+    : isFairDivision
+    ? fairDivisionMechanisms
+    : votingMechanisms;
+  const getAxiomsForCategory = isMatching
+    ? getMatchingAxiomsByCategory
+    : isAllocation
+    ? getAllocationAxiomsByCategory
+    : isFairDivision
+    ? getFairDivisionAxiomsByCategory
+    : getAxiomsByCategory;
+  const getCompatible = isMatching
+    ? getCompatibleMatchingMechanisms
+    : isAllocation
+    ? getCompatibleAllocationMechanisms
+    : isFairDivision
+    ? getCompatibleFairDivisionMechanisms
+    : getCompatibleMechanisms;
+  const wouldEliminateAll = isMatching
+    ? wouldEliminateAllMatchingMechanisms
+    : isAllocation
+    ? wouldEliminateAllAllocationMechanisms
+    : isFairDivision
+    ? wouldEliminateAllFairDivisionMechanisms
+    : wouldEliminateAllMechanisms;
+  const getFailed = isMatching
+    ? getFailedMatchingAxioms
+    : isAllocation
+    ? getFailedAllocationAxioms
+    : isFairDivision
+    ? getFailedFairDivisionAxioms
+    : getFailedAxioms;
+  const categoryDescriptions = isMatching
+    ? matchingCategoryDescriptions
+    : isAllocation
+    ? allocationCategoryDescriptions
+    : isFairDivision
+    ? fairDivisionCategoryDescriptions
+    : votingCategoryDescriptions;
 
   const compatibleMechanisms = useMemo(
     () => getCompatible(selectedAxioms),
@@ -206,7 +274,7 @@ export function AxiomSelect() {
           </h1>
         </div>
         <p className="text-slate-600 mb-6">
-          Select the fairness axioms you want your {isFairDivision ? 'division' : 'decision'} mechanism to satisfy. As you
+          Select the fairness axioms you want your {isMatching ? 'matching' : isAllocation ? 'allocation' : isFairDivision ? 'division' : 'decision'} mechanism to satisfy. As you
           select axioms, mechanisms that don't satisfy them will be eliminated.
         </p>
 
@@ -253,8 +321,8 @@ export function AxiomSelect() {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                 <p className="text-sm text-red-700 font-medium">No mechanisms available</p>
                 <p className="text-xs text-red-600 mt-1">
-                  Your selected axioms are incompatible with all {isFairDivision ? 'fair division' : 'voting'} mechanisms.
-                  {isFairDivision
+                  Your selected axioms are incompatible with all {isMatching ? 'matching' : isAllocation ? 'allocation' : isFairDivision ? 'fair division' : 'voting'} mechanisms.
+                  {isAllocation || isFairDivision || isMatching
                     ? ' Try selecting fewer axioms or different combinations.'
                     : ' This often happens due to impossibility theorems in social choice theory.'}
                 </p>
@@ -299,8 +367,25 @@ export function AxiomSelect() {
             </div>
           </div>
 
+          {/* Matching-specific info */}
+          {isMatching && (
+            <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-4">
+              <h3 className="font-medium text-indigo-800 text-sm mb-2">
+                About Matching
+              </h3>
+              <p className="text-xs text-indigo-700 mb-2">
+                Matching theory studies how to pair agents with each other or with resources based on preferences.
+                The 2012 Nobel Prize in Economics was awarded to Alvin Roth and Lloyd Shapley for their work on stable allocations.
+              </p>
+              <p className="text-xs text-indigo-700">
+                Key trade-off: Stability (no blocking pairs) vs Pareto efficiency (optimal welfare).
+                Gale-Shapley achieves stability while TTC achieves Pareto efficiency.
+              </p>
+            </div>
+          )}
+
           {/* Voting-specific impossibility theorems */}
-          {!isFairDivision && (
+          {!isFairDivision && !isMatching && (
             <div className="bg-amber-50 rounded-lg border border-amber-200 p-4">
               <h3 className="font-medium text-amber-800 text-sm mb-2">
                 Why can't I have everything?
@@ -332,6 +417,23 @@ export function AxiomSelect() {
             </div>
           )}
 
+          {/* Allocation-specific info */}
+          {isAllocation && (
+            <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
+              <h3 className="font-medium text-purple-800 text-sm mb-2">
+                About Resource Allocation
+              </h3>
+              <p className="text-xs text-purple-700 mb-2">
+                Resource allocation deals with dividing divisible resources (bandwidth, budget, computing time)
+                among agents with different demands. Unlike fair division, agents specify how much they want.
+              </p>
+              <p className="text-xs text-purple-700">
+                Key considerations include work conservation (use all resources if there's demand) and
+                fairness guarantees (minimum shares regardless of others' demands).
+              </p>
+            </div>
+          )}
+
           {/* Trade-offs guide */}
           {!isFairDivision && (
             <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
@@ -356,6 +458,33 @@ export function AxiomSelect() {
                 <li>* <strong>Cut-and-Choose</strong> = Simple, 2-person, envy-free</li>
                 <li>* <strong>Moving Knife</strong> = Works for any number of people</li>
                 <li>* <strong>Adjusted Winner</strong> = Best for 2-person divisions with many items</li>
+              </ul>
+            </div>
+          )}
+
+          {isAllocation && (
+            <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
+              <h3 className="font-medium text-purple-800 text-sm mb-2">
+                Mechanism Comparison
+              </h3>
+              <ul className="text-xs text-purple-700 space-y-1">
+                <li>* <strong>Proportional Fairness</strong> = Allocates by demand ratio</li>
+                <li>* <strong>Max-Min Fairness</strong> = Maximizes minimum allocation</li>
+                <li>* <strong>Weighted Fair Queuing</strong> = Priority-based allocation</li>
+              </ul>
+            </div>
+          )}
+
+          {isMatching && (
+            <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-4">
+              <h3 className="font-medium text-indigo-800 text-sm mb-2">
+                Mechanism Comparison
+              </h3>
+              <ul className="text-xs text-indigo-700 space-y-1">
+                <li>* <strong>Gale-Shapley</strong> = Stable matching, proposer-optimal</li>
+                <li>* <strong>Top Trading Cycle</strong> = Pareto efficient, strategy-proof</li>
+                <li>* <strong>Serial Dictatorship</strong> = Simple priority-based assignment</li>
+                <li>* <strong>Random Serial Dictatorship</strong> = Fair random priority</li>
               </ul>
             </div>
           )}
