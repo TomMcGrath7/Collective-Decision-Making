@@ -5,10 +5,12 @@ import { useSession } from '../hooks/useSession';
 import { votingMechanisms, runVotingMechanism } from '../lib/mechanisms/voting';
 import { fairDivisionMechanisms, runFairDivisionMechanism } from '../lib/mechanisms/fairDivision';
 import { allocationMechanisms, runAllocationMechanism } from '../lib/mechanisms/allocation';
+import { matchingMechanisms, runMatchingMechanism } from '../lib/mechanisms/matching';
 import { votingAxioms } from '../lib/axioms/voting';
 import { fairDivisionAxioms } from '../lib/axioms/fairDivision';
 import { allocationAxioms } from '../lib/axioms/allocation';
-import type { VotingProblem, VotingResult, FairDivisionProblem, FairDivisionResult, DivisibleAllocationProblem, DivisibleAllocationResult } from '../types';
+import { matchingAxioms } from '../lib/axioms/matching';
+import type { VotingProblem, VotingResult, FairDivisionProblem, FairDivisionResult, DivisibleAllocationProblem, DivisibleAllocationResult, MatchingProblem, MatchingResult } from '../types';
 
 function VotingResults({
   mechanism,
@@ -825,6 +827,330 @@ function AllocationResults({
   );
 }
 
+function MatchingResults({
+  mechanism,
+  problem,
+  result,
+  selectedAxioms,
+  allMechanismResults,
+}: {
+  mechanism: typeof matchingMechanisms[0];
+  problem: MatchingProblem;
+  result: MatchingResult;
+  selectedAxioms: string[];
+  allMechanismResults: Array<{
+    mechanism: typeof matchingMechanisms[0];
+    result: MatchingResult;
+    isCurrent: boolean;
+  }>;
+}) {
+  const getAgentNameA = (id: string) =>
+    problem.agentsSideA.find((a) => a.id === id)?.name || id;
+  const getAgentNameB = (id: string) =>
+    problem.agentsSideB.find((b) => b.id === id)?.name || id;
+
+  // Generate colors for agents
+  const agentColorsA = ['bg-indigo-400', 'bg-blue-400', 'bg-cyan-400', 'bg-teal-400', 'bg-emerald-400'];
+  const agentColorsB = ['bg-rose-400', 'bg-pink-400', 'bg-fuchsia-400', 'bg-purple-400', 'bg-violet-400'];
+
+  return (
+    <>
+      <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-lg p-6 mb-6">
+        <p className="text-indigo-100 text-sm mb-1">Matching using {mechanism.name}</p>
+        <h1 className="text-3xl font-bold mb-2">
+          {result.matches.length} Match{result.matches.length !== 1 ? 'es' : ''} Found
+        </h1>
+        <p className="text-indigo-100 text-sm">
+          {problem.agentsSideA.length} participants matched with {problem.agentsSideB.length} options
+        </p>
+      </div>
+
+      {/* Visual Matching Display */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-3">Matching Visualization</h2>
+        <div className="flex justify-between gap-4">
+          {/* Side A */}
+          <div className="flex-1">
+            <p className="text-xs font-medium text-slate-500 mb-2 text-center">
+              {problem.type === 'assignment' ? 'People' : 'Side A'}
+            </p>
+            <div className="space-y-2">
+              {problem.agentsSideA.map((agent, index) => {
+                const match = result.matches.find((m) => m.agentA === agent.id);
+                const isMatched = !!match;
+                return (
+                  <div
+                    key={agent.id}
+                    className={`flex items-center justify-between p-2 rounded-lg ${
+                      isMatched ? 'bg-indigo-50 border border-indigo-200' : 'bg-slate-50 border border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${agentColorsA[index % agentColorsA.length]}`} />
+                      <span className={`text-sm ${isMatched ? 'text-indigo-800 font-medium' : 'text-slate-500'}`}>
+                        {agent.name}
+                      </span>
+                    </div>
+                    {isMatched && (
+                      <span className="text-xs text-indigo-600">
+                        {getAgentNameB(match.agentB)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Connections */}
+          <div className="flex items-center justify-center px-4">
+            <div className="text-slate-300 text-2xl">⟷</div>
+          </div>
+
+          {/* Side B */}
+          <div className="flex-1">
+            <p className="text-xs font-medium text-slate-500 mb-2 text-center">
+              {problem.type === 'assignment' ? 'Items' : 'Side B'}
+            </p>
+            <div className="space-y-2">
+              {problem.agentsSideB.map((agent, index) => {
+                const matches = result.matches.filter((m) => m.agentB === agent.id);
+                const isMatched = matches.length > 0;
+                return (
+                  <div
+                    key={agent.id}
+                    className={`flex items-center justify-between p-2 rounded-lg ${
+                      isMatched ? 'bg-rose-50 border border-rose-200' : 'bg-slate-50 border border-slate-200'
+                    }`}
+                  >
+                    <span className={`text-sm ${isMatched ? 'text-rose-800 font-medium' : 'text-slate-500'}`}>
+                      {agent.name}
+                      {agent.capacity && agent.capacity > 1 && ` (${matches.length}/${agent.capacity})`}
+                    </span>
+                    <div className={`w-3 h-3 rounded-full ${agentColorsB[index % agentColorsB.length]}`} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Matching Summary */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <h2 className="font-semibold text-slate-800 mb-3">Matching Summary</h2>
+          <div className="space-y-2">
+            {result.matches.map((match, index) => (
+              <div key={index} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
+                <span className="font-medium text-slate-800">{getAgentNameA(match.agentA)}</span>
+                <span className="text-slate-400">→</span>
+                <span className="font-medium text-slate-800">{getAgentNameB(match.agentB)}</span>
+              </div>
+            ))}
+            {result.unmatchedA.length > 0 && (
+              <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-700">
+                  <strong>Unmatched:</strong> {result.unmatchedA.map(getAgentNameA).join(', ')}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Configuration */}
+        <div className="bg-white rounded-lg border border-slate-200 p-4">
+          <h2 className="font-semibold text-slate-800 mb-3">Configuration</h2>
+          <dl className="text-sm space-y-2">
+            <div>
+              <dt className="text-slate-500">Mechanism</dt>
+              <dd className="font-medium text-slate-800">{mechanism.name}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Matching Type</dt>
+              <dd className="font-medium text-slate-800 capitalize">{problem.type.replace('-', ' ')}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Participants</dt>
+              <dd className="font-medium text-slate-800">{problem.agentsSideA.length} (Side A)</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Options</dt>
+              <dd className="font-medium text-slate-800">{problem.agentsSideB.length} (Side B)</dd>
+            </div>
+            {selectedAxioms.length > 0 && (
+              <div>
+                <dt className="text-slate-500">Required Axioms</dt>
+                <dd className="font-medium text-slate-800">
+                  {selectedAxioms
+                    .map((id) => matchingAxioms.find((a) => a.id === id)?.name)
+                    .join(', ')}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </div>
+
+      {/* Fairness Properties */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-3">Fairness Properties</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {result.fairnessProperties.map((prop) => (
+            <div
+              key={prop.property}
+              className={`p-3 rounded-lg border ${
+                prop.satisfied
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-slate-50 border-slate-200'
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className={prop.satisfied ? 'text-green-600' : 'text-slate-400'}>
+                  {prop.satisfied ? '✓' : '✗'}
+                </span>
+                <span className={`font-medium ${prop.satisfied ? 'text-green-800' : 'text-slate-600'}`}>
+                  {prop.property}
+                </span>
+              </div>
+              <p className={`text-xs ${prop.satisfied ? 'text-green-700' : 'text-slate-500'}`}>
+                {prop.explanation}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Step-by-Step Explanation */}
+      {result.steps && result.steps.length > 0 && (
+        <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+          <h2 className="font-semibold text-slate-800 mb-3">Step-by-Step Process</h2>
+          <div className="space-y-3">
+            {result.steps.map((step) => (
+              <div key={step.step} className="flex gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-medium">
+                  {step.step}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-700">{step.description}</p>
+                  {step.currentMatches.length > 0 && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Current matches: {step.currentMatches.map((m) =>
+                        `${getAgentNameA(m.agentA)}→${getAgentNameB(m.agentB)}`
+                      ).join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-3">How the Result Was Calculated</h2>
+        <div className="text-sm text-slate-600 whitespace-pre-line">
+          {result.explanation}
+        </div>
+      </div>
+
+      <div className="bg-indigo-50 rounded-lg border border-indigo-200 p-4 mb-6">
+        <h3 className="font-medium text-indigo-800 mb-2">About {mechanism.name}</h3>
+        <p className="text-sm text-indigo-700 mb-2">{mechanism.howItWorks}</p>
+        <details>
+          <summary className="text-sm text-indigo-600 cursor-pointer hover:text-indigo-700">
+            Satisfied fairness axioms
+          </summary>
+          <ul className="mt-2 text-sm text-indigo-700 space-y-1">
+            {mechanism.satisfiedAxioms.map((axiomId) => {
+              const axiom = matchingAxioms.find((a) => a.id === axiomId);
+              return axiom ? (
+                <li key={axiomId}>
+                  <span className="font-medium">{axiom.name}</span>: {axiom.description}
+                </li>
+              ) : null;
+            })}
+          </ul>
+        </details>
+      </div>
+
+      {/* What If? Comparison Section */}
+      <div className="bg-white rounded-lg border border-slate-200 p-4 mb-6">
+        <h2 className="font-semibold text-slate-800 mb-2">What If? Compare Mechanisms</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          See how the same matching problem would be handled by different matching mechanisms.
+        </p>
+
+        <div className="space-y-3">
+          {allMechanismResults.map(({ mechanism: m, isCurrent, result: r }) => {
+            // Check if results are similar (same matches)
+            const currentMatchSet = new Set(result.matches.map((match) => `${match.agentA}-${match.agentB}`));
+            const otherMatchSet = new Set(r.matches.map((match) => `${match.agentA}-${match.agentB}`));
+            const sameResult = currentMatchSet.size === otherMatchSet.size &&
+              [...currentMatchSet].every((m) => otherMatchSet.has(m));
+
+            return (
+              <div
+                key={m.id}
+                className={`p-3 rounded-lg border ${
+                  isCurrent
+                    ? 'bg-indigo-50 border-indigo-200'
+                    : sameResult
+                    ? 'bg-blue-50 border-blue-200'
+                    : 'bg-amber-50 border-amber-200'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium ${
+                        isCurrent ? 'text-indigo-800' : sameResult ? 'text-blue-800' : 'text-amber-800'
+                      }`}>
+                        {m.name}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-xs bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <div className={`text-sm mt-1 ${
+                      isCurrent ? 'text-indigo-700' : sameResult ? 'text-blue-700' : 'text-amber-700'
+                    }`}>
+                      Matches: {r.matches.map((match) =>
+                        `${getAgentNameA(match.agentA)}→${getAgentNameB(match.agentB)}`
+                      ).join(', ') || 'None'}
+                    </div>
+                    <div className={`text-xs mt-1 ${
+                      isCurrent ? 'text-indigo-600' : sameResult ? 'text-blue-600' : 'text-amber-600'
+                    }`}>
+                      Properties: {r.fairnessProperties.filter((p) => p.satisfied).map((p) => p.property).join(', ')}
+                    </div>
+                  </div>
+                  {!isCurrent && (
+                    <div className={`text-xs px-2 py-1 rounded ${
+                      sameResult ? 'bg-blue-200 text-blue-800' : 'bg-amber-200 text-amber-800'
+                    }`}>
+                      {sameResult ? 'Same matching' : 'Different matching'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-200">
+          <p className="text-xs text-slate-500">
+            Different matching mechanisms make different trade-offs between stability, efficiency, and fairness.
+            The 2012 Nobel Prize in Economics was awarded to Alvin Roth and Lloyd Shapley for their work on matching theory.
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function Results() {
   const navigate = useNavigate();
   const { session, resetSession } = useSession();
@@ -833,10 +1159,12 @@ export function Results() {
   const isVoting = problemType === 'voting';
   const isFairDivision = problemType === 'fair-division';
   const isAllocation = problemType === 'allocation';
+  const isMatching = problemType === 'matching';
 
   const votingMechanism = isVoting ? votingMechanisms.find((m) => m.id === selectedMechanism) : null;
   const fairDivisionMechanism = isFairDivision ? fairDivisionMechanisms.find((m) => m.id === selectedMechanism) : null;
   const allocationMechanism = isAllocation ? allocationMechanisms.find((m) => m.id === selectedMechanism) : null;
+  const matchingMechanism = isMatching ? matchingMechanisms.find((m) => m.id === selectedMechanism) : null;
 
   const votingProblem = isVoting ? (problem as VotingProblem | null) : null;
   const votingResult = isVoting ? (result as VotingResult | null) : null;
@@ -846,6 +1174,9 @@ export function Results() {
 
   const allocationProblem = isAllocation ? (problem as DivisibleAllocationProblem | null) : null;
   const allocationResult = isAllocation ? (result as DivisibleAllocationResult | null) : null;
+
+  const matchingProblem = isMatching ? (problem as MatchingProblem | null) : null;
+  const matchingResult = isMatching ? (result as MatchingResult | null) : null;
 
   // Compute results for all voting mechanisms for "What if?" comparison
   const allVotingMechanismResults = useMemo(() => {
@@ -925,9 +1256,31 @@ export function Results() {
     }).filter((r): r is NonNullable<typeof r> => r !== null);
   }, [allocationProblem, selectedMechanism]);
 
+  // Compute results for all matching mechanisms for "What if?" comparison
+  const allMatchingMechanismResults = useMemo(() => {
+    if (!matchingProblem) return [];
+
+    return matchingMechanisms.map((m) => {
+      try {
+        const result = runMatchingMechanism(m.id, matchingProblem);
+        return {
+          mechanism: m,
+          result,
+          isCurrent: m.id === selectedMechanism,
+        };
+      } catch (error) {
+        console.error(
+          'Failed to run matching mechanism for comparison:',
+          { mechanismId: m.id, mechanismName: m.name, error }
+        );
+        return null;
+      }
+    }).filter((r): r is NonNullable<typeof r> => r !== null);
+  }, [matchingProblem, selectedMechanism]);
+
   // Trigger confetti on results display
   useEffect(() => {
-    if (votingResult || fairDivisionResult || allocationResult) {
+    if (votingResult || fairDivisionResult || allocationResult || matchingResult) {
       confetti({
         particleCount: 100,
         spread: 70,
@@ -935,7 +1288,7 @@ export function Results() {
         colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
       });
     }
-  }, [votingResult, fairDivisionResult, allocationResult]);
+  }, [votingResult, fairDivisionResult, allocationResult, matchingResult]);
 
   const handleStartOver = () => {
     resetSession();
@@ -950,8 +1303,9 @@ export function Results() {
   const hasVotingData = isVoting && votingMechanism && votingProblem && votingResult;
   const hasFairDivisionData = isFairDivision && fairDivisionMechanism && fairDivisionProblem && fairDivisionResult;
   const hasAllocationData = isAllocation && allocationMechanism && allocationProblem && allocationResult;
+  const hasMatchingData = isMatching && matchingMechanism && matchingProblem && matchingResult;
 
-  if (!hasVotingData && !hasFairDivisionData && !hasAllocationData) {
+  if (!hasVotingData && !hasFairDivisionData && !hasAllocationData && !hasMatchingData) {
     return (
       <div className="text-center py-12">
         <p className="text-slate-600 mb-4">No results to display.</p>
@@ -994,6 +1348,16 @@ export function Results() {
           result={allocationResult}
           selectedAxioms={selectedAxioms}
           allMechanismResults={allAllocationMechanismResults}
+        />
+      )}
+
+      {hasMatchingData && (
+        <MatchingResults
+          mechanism={matchingMechanism}
+          problem={matchingProblem}
+          result={matchingResult}
+          selectedAxioms={selectedAxioms}
+          allMechanismResults={allMatchingMechanismResults}
         />
       )}
 
