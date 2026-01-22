@@ -117,14 +117,49 @@ export interface FairnessCheck {
   explanation: string;
 }
 
+// Fair Division specific types
+export interface FairDivisionProblem {
+  agents: Agent[];
+  good: DivisibleGood;
+  valuations: Record<string, number>; // agentId -> total value (100 = equal)
+  cutterAgentId?: string; // For Cut-and-Choose: who cuts
+}
+
+export interface DivisibleGood {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface FairDivisionResult {
+  allocations: FairDivisionAllocation[];
+  explanation: string;
+  fairnessProperties: FairnessCheck[];
+  steps?: FairDivisionStep[];
+}
+
+export interface FairDivisionAllocation {
+  agentId: string;
+  intervals: { start: number; end: number }[];
+  percentageReceived: number;
+  valueReceived: number;
+}
+
+export interface FairDivisionStep {
+  step: number;
+  description: string;
+  actor: string;
+  action: 'cut' | 'choose' | 'assign';
+}
+
 // Session state
 export interface DecisionSession {
   id: string;
   problemType: ProblemType;
   selectedAxioms: string[];
   selectedMechanism: string | null;
-  problem: VotingProblem | AllocationProblem | null;
-  result: VotingResult | AllocationResult | null;
+  problem: VotingProblem | AllocationProblem | FairDivisionProblem | null;
+  result: VotingResult | AllocationResult | FairDivisionResult | null;
   startedAt: number;
 }
 

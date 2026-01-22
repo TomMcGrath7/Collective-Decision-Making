@@ -1,13 +1,21 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAxiomsByCategory } from '../lib/axioms/voting';
+import { getFairDivisionAxiomsByCategory } from '../lib/axioms/fairDivision';
 import { votingMechanisms } from '../lib/mechanisms/voting';
+import { fairDivisionMechanisms } from '../lib/mechanisms/fairDivision';
 import {
   getCompatibleMechanisms,
   wouldEliminateAllMechanisms,
   getFailedAxioms,
 } from '../lib/compatibility/voting';
+import {
+  getCompatibleFairDivisionMechanisms,
+  wouldEliminateAllFairDivisionMechanisms,
+  getFailedFairDivisionAxioms,
+} from '../lib/compatibility/fairDivision';
 import { useSession } from '../hooks/useSession';
-import type { Axiom, AxiomCategory } from '../types';
+import type { Axiom, AxiomCategory, Mechanism } from '../types';
 
 const categoryLabels: Record<AxiomCategory, string> = {
   efficiency: 'Efficiency',
@@ -17,12 +25,20 @@ const categoryLabels: Record<AxiomCategory, string> = {
   consistency: 'Consistency',
 };
 
-const categoryDescriptions: Record<AxiomCategory, string> = {
+const votingCategoryDescriptions: Record<AxiomCategory, string> = {
   efficiency: 'Properties about choosing good outcomes',
   fairness: 'Properties about treating voters and candidates equally',
   strategy: 'Properties about honest voting behavior',
   monotonicity: 'Properties about how results respond to changes',
   consistency: 'Properties about combining or comparing elections',
+};
+
+const fairDivisionCategoryDescriptions: Record<AxiomCategory, string> = {
+  efficiency: 'Properties about not wasting value',
+  fairness: 'Properties about fair shares and envy',
+  strategy: 'Properties about truthful reporting',
+  monotonicity: 'Properties about resource changes',
+  consistency: 'Properties about combining divisions',
 };
 
 function AxiomCheckbox({
@@ -31,12 +47,14 @@ function AxiomCheckbox({
   onToggle,
   wouldEliminate,
   remainingMechanisms,
+  allMechanisms,
 }: {
   axiom: Axiom;
   isSelected: boolean;
   onToggle: () => void;
   wouldEliminate: boolean;
   remainingMechanisms: string[];
+  allMechanisms: Mechanism[];
 }) {
   return (
     <label
@@ -77,10 +95,10 @@ function AxiomCheckbox({
         )}
 
         {/* Show which mechanisms would remain if selected */}
-        {!isSelected && !wouldEliminate && remainingMechanisms.length < votingMechanisms.length && (
+        {!isSelected && !wouldEliminate && remainingMechanisms.length < allMechanisms.length && (
           <p className="text-xs text-slate-500 mt-2">
             Selecting this leaves: {remainingMechanisms.map(id =>
-              votingMechanisms.find(m => m.id === id)?.name
+              allMechanisms.find(m => m.id === id)?.name
             ).join(', ')}
           </p>
         )}
@@ -108,14 +126,12 @@ function AxiomCheckbox({
 function MechanismStatusCard({
   mechanism,
   isCompatible,
-  selectedAxioms,
+  failedAxiomsCount,
 }: {
-  mechanism: typeof votingMechanisms[0];
+  mechanism: Mechanism;
   isCompatible: boolean;
-  selectedAxioms: string[];
+  failedAxiomsCount: number;
 }) {
-  const failedAxioms = getFailedAxioms(mechanism.id, selectedAxioms);
-
   return (
     <div
       className={`text-sm p-2 rounded ${
@@ -128,9 +144,9 @@ function MechanismStatusCard({
         <span className={isCompatible ? '' : 'line-through'}>{mechanism.name}</span>
         {isCompatible && <span className="text-green-600 text-xs">Available</span>}
       </div>
-      {!isCompatible && failedAxioms.length > 0 && (
+      {!isCompatible && failedAxiomsCount > 0 && (
         <p className="text-xs mt-1 text-slate-500">
-          Fails: {failedAxioms.length} selected axiom{failedAxioms.length !== 1 ? 's' : ''}
+          Fails: {failedAxiomsCount} selected axiom{failedAxiomsCount !== 1 ? 's' : ''}
         </p>
       )}
     </div>
@@ -140,17 +156,28 @@ function MechanismStatusCard({
 export function AxiomSelect() {
   const navigate = useNavigate();
   const { session, toggleAxiom, setSelectedAxioms } = useSession();
-  const { selectedAxioms } = session;
+  const { selectedAxioms, problemType } = session;
 
-  const compatibleMechanisms = getCompatibleMechanisms(selectedAxioms);
+  const isFairDivision = problemType === 'fair-division';
 
-  const categories: AxiomCategory[] = [
-    'efficiency',
-    'fairness',
-    'strategy',
-    'monotonicity',
-    'consistency',
-  ];
+  // Select the appropriate mechanisms and compatibility functions
+  const mechanisms = isFairDivision ? fairDivisionMechanisms : votingMechanisms;
+  const getAxiomsForCategory = isFairDivision ? getFairDivisionAxiomsByCategory : getAxiomsByCategory;
+  const getCompatible = isFairDivision ? getCompatibleFairDivisionMechanisms : getCompatibleMechanisms;
+  const wouldEliminateAll = isFairDivision ? wouldEliminateAllFairDivisionMechanisms : wouldEliminateAllMechanisms;
+  const getFailed = isFairDivision ? getFailedFairDivisionAxioms : getFailedAxioms;
+  const categoryDescriptions = isFairDivision ? fairDivisionCategoryDescriptions : votingCategoryDescriptions;
+
+  const compatibleMechanisms = useMemo(
+    () => getCompatible(selectedAxioms),
+    [selectedAxioms, getCompatible]
+  );
+
+  // Only show categories that have axioms for this problem type
+  const categories: AxiomCategory[] = useMemo(() => {
+    const allCategories: AxiomCategory[] = ['efficiency', 'fairness', 'strategy', 'monotonicity', 'consistency'];
+    return allCategories.filter((cat) => getAxiomsForCategory(cat).length > 0);
+  }, [getAxiomsForCategory]);
 
   const handleContinue = () => {
     if (compatibleMechanisms.length > 0) {
@@ -167,7 +194,7 @@ export function AxiomSelect() {
     if (selectedAxioms.includes(axiomId)) {
       return compatibleMechanisms;
     }
-    return getCompatibleMechanisms([...selectedAxioms, axiomId]);
+    return getCompatible([...selectedAxioms, axiomId]);
   };
 
   return (
@@ -179,13 +206,13 @@ export function AxiomSelect() {
           </h1>
         </div>
         <p className="text-slate-600 mb-6">
-          Select the fairness axioms you want your decision mechanism to satisfy. As you
+          Select the fairness axioms you want your {isFairDivision ? 'division' : 'decision'} mechanism to satisfy. As you
           select axioms, mechanisms that don't satisfy them will be eliminated.
         </p>
 
         <div className="space-y-6">
           {categories.map((category) => {
-            const categoryAxioms = getAxiomsByCategory(category);
+            const categoryAxioms = getAxiomsForCategory(category);
             if (categoryAxioms.length === 0) return null;
 
             return (
@@ -205,9 +232,10 @@ export function AxiomSelect() {
                       onToggle={() => toggleAxiom(axiom.id)}
                       wouldEliminate={
                         !selectedAxioms.includes(axiom.id) &&
-                        wouldEliminateAllMechanisms(selectedAxioms, axiom.id)
+                        wouldEliminateAll(selectedAxioms, axiom.id)
                       }
                       remainingMechanisms={getMechanismsAfterSelection(axiom.id)}
+                      allMechanisms={mechanisms}
                     />
                   ))}
                 </div>
@@ -225,18 +253,20 @@ export function AxiomSelect() {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                 <p className="text-sm text-red-700 font-medium">No mechanisms available</p>
                 <p className="text-xs text-red-600 mt-1">
-                  Your selected axioms are incompatible with all voting mechanisms.
-                  This often happens due to impossibility theorems in social choice theory.
+                  Your selected axioms are incompatible with all {isFairDivision ? 'fair division' : 'voting'} mechanisms.
+                  {isFairDivision
+                    ? ' Try selecting fewer axioms or different combinations.'
+                    : ' This often happens due to impossibility theorems in social choice theory.'}
                 </p>
               </div>
             ) : null}
             <div className="space-y-2">
-              {votingMechanisms.map((mech) => (
+              {mechanisms.map((mech) => (
                 <MechanismStatusCard
                   key={mech.id}
                   mechanism={mech}
                   isCompatible={compatibleMechanisms.includes(mech.id)}
-                  selectedAxioms={selectedAxioms}
+                  failedAxiomsCount={getFailed(mech.id, selectedAxioms).length}
                 />
               ))}
             </div>
@@ -246,8 +276,8 @@ export function AxiomSelect() {
             <h2 className="font-semibold text-slate-800 mb-2">Selection Summary</h2>
             <p className="text-sm text-slate-600 mb-3">
               {selectedAxioms.length === 0
-                ? `No axioms selected. All ${votingMechanisms.length} mechanisms available.`
-                : `${selectedAxioms.length} axiom${selectedAxioms.length !== 1 ? 's' : ''} selected. ${compatibleMechanisms.length} of ${votingMechanisms.length} mechanism${compatibleMechanisms.length !== 1 ? 's' : ''} compatible.`}
+                ? `No axioms selected. All ${mechanisms.length} mechanisms available.`
+                : `${selectedAxioms.length} axiom${selectedAxioms.length !== 1 ? 's' : ''} selected. ${compatibleMechanisms.length} of ${mechanisms.length} mechanism${compatibleMechanisms.length !== 1 ? 's' : ''} compatible.`}
             </p>
 
             <div className="flex gap-2">
@@ -269,31 +299,66 @@ export function AxiomSelect() {
             </div>
           </div>
 
-          <div className="bg-amber-50 rounded-lg border border-amber-200 p-4">
-            <h3 className="font-medium text-amber-800 text-sm mb-2">
-              Why can't I have everything?
-            </h3>
-            <p className="text-xs text-amber-700 mb-2">
-              <strong>Arrow's Impossibility Theorem:</strong> No ranked voting system with 3+
-              candidates can simultaneously satisfy Pareto efficiency, IIA, and non-dictatorship.
-            </p>
-            <p className="text-xs text-amber-700">
-              <strong>Gibbard-Satterthwaite:</strong> No non-dictatorial voting rule is fully
-              strategyproof with 3+ candidates.
-            </p>
-          </div>
+          {/* Voting-specific impossibility theorems */}
+          {!isFairDivision && (
+            <div className="bg-amber-50 rounded-lg border border-amber-200 p-4">
+              <h3 className="font-medium text-amber-800 text-sm mb-2">
+                Why can't I have everything?
+              </h3>
+              <p className="text-xs text-amber-700 mb-2">
+                <strong>Arrow's Impossibility Theorem:</strong> No ranked voting system with 3+
+                candidates can simultaneously satisfy Pareto efficiency, IIA, and non-dictatorship.
+              </p>
+              <p className="text-xs text-amber-700">
+                <strong>Gibbard-Satterthwaite:</strong> No non-dictatorial voting rule is fully
+                strategyproof with 3+ candidates.
+              </p>
+            </div>
+          )}
 
-          <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
-            <h3 className="font-medium text-blue-800 text-sm mb-2">
-              Understanding the trade-offs
-            </h3>
-            <ul className="text-xs text-blue-700 space-y-1">
-              <li>• <strong>Condorcet Winner</strong> = Only pairwise comparison works</li>
-              <li>• <strong>Majority</strong> = Eliminates Borda and Approval</li>
-              <li>• <strong>Monotonicity</strong> = Eliminates IRV</li>
-              <li>• <strong>IIA</strong> = Eliminates everything (Arrow's theorem)</li>
-            </ul>
-          </div>
+          {/* Fair division-specific info */}
+          {isFairDivision && (
+            <div className="bg-green-50 rounded-lg border border-green-200 p-4">
+              <h3 className="font-medium text-green-800 text-sm mb-2">
+                About Fair Division
+              </h3>
+              <p className="text-xs text-green-700 mb-2">
+                Fair division studies how to split resources among people with potentially different preferences.
+                Key properties include proportionality (everyone gets at least 1/n) and envy-freeness (no one wants another's share).
+              </p>
+              <p className="text-xs text-green-700">
+                Unlike voting, many fair division problems have solutions satisfying multiple strong properties simultaneously.
+              </p>
+            </div>
+          )}
+
+          {/* Trade-offs guide */}
+          {!isFairDivision && (
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+              <h3 className="font-medium text-blue-800 text-sm mb-2">
+                Understanding the trade-offs
+              </h3>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>* <strong>Condorcet Winner</strong> = Only pairwise comparison works</li>
+                <li>* <strong>Majority</strong> = Eliminates Borda and Approval</li>
+                <li>* <strong>Monotonicity</strong> = Eliminates IRV</li>
+                <li>* <strong>IIA</strong> = Eliminates everything (Arrow's theorem)</li>
+              </ul>
+            </div>
+          )}
+
+          {isFairDivision && (
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+              <h3 className="font-medium text-blue-800 text-sm mb-2">
+                Mechanism Comparison
+              </h3>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li>* <strong>Cut-and-Choose</strong> = Simple, 2-person, envy-free</li>
+                <li>* <strong>Moving Knife</strong> = Works for any number of people</li>
+                <li>* <strong>Adjusted Winner</strong> = Best for 2-person divisions with many items</li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>
