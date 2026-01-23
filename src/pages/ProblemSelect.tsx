@@ -7,28 +7,28 @@ const problems: ProblemDefinition[] = [
     id: 'voting',
     name: 'Voting',
     description:
-      'Choose a winner from a set of candidates based on voter preferences. Examples: electing a leader, selecting a project, choosing a restaurant.',
+      'Do you need to decide on a winner? Choose a winner from a set of candidates based on voter preferences. Examples: electing a leader, selecting a project, choosing a restaurant.',
     icon: '🗳️',
   },
   {
     id: 'allocation',
     name: 'Resource Allocation',
     description:
-      'Divide resources among participants fairly. Examples: splitting costs, dividing inheritance, allocating budget.',
+      'Do you need to split something like time or money? Divide resources among participants fairly. Examples: splitting costs, dividing inheritance, allocating budget.',
     icon: '📊',
   },
   {
     id: 'fair-division',
     name: 'Fair Division',
     description:
-      'Divide goods among people with different preferences. Examples: splitting rent, dividing household chores, cake cutting.',
+      'Do you need to split something like cake? Divide a single continuous resource among people so everyone feels they got a fair share. Examples: cake cutting, splitting rent, dividing land.',
     icon: '🍰',
   },
   {
     id: 'matching',
     name: 'Matching',
     description:
-      'Match agents to each other or to resources. Examples: roommate matching, job assignments, school choice.',
+      'Do you need to assign tasks where people may have varying preferences? Match agents to each other or to resources. Examples: roommate matching, job assignments, school choice.',
     icon: '🔗',
   },
 ];
@@ -52,33 +52,36 @@ export function ProblemSelect() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {problems.map((problem) => (
-          <button
-            key={problem.id}
-            onClick={() => handleSelect(problem.id)}
-            disabled={problem.id !== 'voting'}
-            className={`text-left p-4 rounded-lg border transition-all ${
-              problem.id === 'voting'
-                ? 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer'
-                : 'bg-slate-100 border-slate-200 cursor-not-allowed opacity-60'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">{problem.icon}</span>
-              <div>
-                <h3 className="font-semibold text-slate-800">
-                  {problem.name}
-                  {problem.id !== 'voting' && (
-                    <span className="ml-2 text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded">
-                      Coming soon
-                    </span>
-                  )}
-                </h3>
-                <p className="text-sm text-slate-600 mt-1">{problem.description}</p>
+        {problems.map((problem) => {
+          const isEnabled = problem.id === 'voting' || problem.id === 'fair-division' || problem.id === 'allocation' || problem.id === 'matching';
+          return (
+            <button
+              key={problem.id}
+              onClick={() => handleSelect(problem.id)}
+              disabled={!isEnabled}
+              className={`text-left p-4 rounded-lg border transition-all ${
+                isEnabled
+                  ? 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer'
+                  : 'bg-slate-100 border-slate-200 cursor-not-allowed opacity-60'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">{problem.icon}</span>
+                <div>
+                  <h3 className="font-semibold text-slate-800">
+                    {problem.name}
+                    {!isEnabled && (
+                      <span className="ml-2 text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded">
+                        Coming soon
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-sm text-slate-600 mt-1">{problem.description}</p>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

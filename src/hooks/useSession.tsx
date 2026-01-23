@@ -5,8 +5,14 @@ import type {
   ProblemType,
   VotingProblem,
   AllocationProblem,
+  FairDivisionProblem,
+  DivisibleAllocationProblem,
+  MatchingProblem,
   VotingResult,
   AllocationResult,
+  FairDivisionResult,
+  DivisibleAllocationResult,
+  MatchingResult,
 } from '../types';
 
 interface SessionContextValue {
@@ -15,8 +21,8 @@ interface SessionContextValue {
   toggleAxiom: (axiomId: string) => void;
   setSelectedAxioms: (axioms: string[]) => void;
   setMechanism: (mechanismId: string) => void;
-  setProblem: (problem: VotingProblem | AllocationProblem) => void;
-  setResult: (result: VotingResult | AllocationResult) => void;
+  setProblem: (problem: VotingProblem | AllocationProblem | FairDivisionProblem | DivisibleAllocationProblem | MatchingProblem) => void;
+  setResult: (result: VotingResult | AllocationResult | FairDivisionResult | DivisibleAllocationResult | MatchingResult) => void;
   resetSession: () => void;
 }
 
@@ -74,7 +80,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const setProblem = useCallback((problem: VotingProblem | AllocationProblem) => {
+  const setProblem = useCallback((problem: VotingProblem | AllocationProblem | FairDivisionProblem | DivisibleAllocationProblem | MatchingProblem) => {
     setSession((prev) => ({
       ...prev,
       problem,
@@ -82,7 +88,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const setResult = useCallback((result: VotingResult | AllocationResult) => {
+  const setResult = useCallback((result: VotingResult | AllocationResult | FairDivisionResult | DivisibleAllocationResult | MatchingResult) => {
     setSession((prev) => ({
       ...prev,
       result,

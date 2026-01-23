@@ -8,6 +8,9 @@ import {
   AxiomSelect,
   MechanismSelect,
   VotingInput,
+  FairDivisionInput,
+  AllocationInput,
+  MatchingInput,
   Results,
   LearnMore,
 } from './pages';
@@ -29,6 +32,9 @@ function App() {
             <Route path="axioms" element={<AxiomSelect />} />
             <Route path="mechanism" element={<MechanismSelect />} />
             <Route path="input" element={<VotingInput />} />
+            <Route path="fair-division-input" element={<FairDivisionInput />} />
+            <Route path="allocation-input" element={<AllocationInput />} />
+            <Route path="matching-input" element={<MatchingInput />} />
             <Route path="results" element={<Results />} />
             <Route path="learn" element={<LearnMore />} />
           </Route>

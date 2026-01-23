@@ -1,14 +1,35 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { votingMechanisms } from '../lib/mechanisms/voting';
+import { fairDivisionMechanisms } from '../lib/mechanisms/fairDivision';
+import { allocationMechanisms } from '../lib/mechanisms/allocation';
+import { matchingMechanisms } from '../lib/mechanisms/matching';
 import { votingAxioms } from '../lib/axioms/voting';
+import { fairDivisionAxioms } from '../lib/axioms/fairDivision';
+import { allocationAxioms } from '../lib/axioms/allocation';
+import { matchingAxioms } from '../lib/axioms/matching';
 import {
   getCompatibleMechanisms,
   getFailedAxioms,
   mechanismSatisfiesAxiom,
 } from '../lib/compatibility/voting';
+import {
+  getCompatibleFairDivisionMechanisms,
+  getFailedFairDivisionAxioms,
+  fairDivisionMechanismSatisfiesAxiom,
+} from '../lib/compatibility/fairDivision';
+import {
+  getCompatibleAllocationMechanisms,
+  getFailedAllocationAxioms,
+  allocationMechanismSatisfiesAxiom,
+} from '../lib/compatibility/allocation';
+import {
+  getCompatibleMatchingMechanisms,
+  getFailedMatchingAxioms,
+  matchingMechanismSatisfiesAxiom,
+} from '../lib/compatibility/matching';
 import { useSession } from '../hooks/useSession';
-import type { Mechanism } from '../types';
+import type { Mechanism, Axiom } from '../types';
 
 function MechanismCard({
   mechanism,
@@ -18,6 +39,8 @@ function MechanismCard({
   failedAxioms,
   onSelect,
   showAllMode,
+  axioms,
+  satisfiesAxiom,
 }: {
   mechanism: Mechanism;
   isCompatible: boolean;
@@ -26,11 +49,13 @@ function MechanismCard({
   failedAxioms: string[];
   onSelect: () => void;
   showAllMode: boolean;
+  axioms: Axiom[];
+  satisfiesAxiom: (mechanismId: string, axiomId: string) => boolean;
 }) {
   // In show all mode, display all axioms; otherwise only show selected ones
   const axiomsToShow = showAllMode
-    ? votingAxioms.filter((a) => a.applicableTo.includes('voting'))
-    : votingAxioms.filter((a) => selectedAxioms.includes(a.id));
+    ? axioms
+    : axioms.filter((a) => selectedAxioms.includes(a.id));
 
   return (
     <div
@@ -79,7 +104,7 @@ function MechanismCard({
       <div className="flex flex-wrap gap-1.5">
         {axiomsToShow.length > 0 ? (
           axiomsToShow.map((axiom) => {
-            const satisfied = mechanismSatisfiesAxiom(mechanism.id, axiom.id);
+            const satisfied = satisfiesAxiom(mechanism.id, axiom.id);
             const isRequired = selectedAxioms.includes(axiom.id);
             return (
               <span
@@ -101,7 +126,7 @@ function MechanismCard({
           })
         ) : (
           <span className="text-xs text-slate-500">
-            Satisfies {mechanism.satisfiedAxioms.length} of {votingAxioms.length} axioms
+            Satisfies {mechanism.satisfiedAxioms.length} of {axioms.length} axioms
           </span>
         )}
       </div>
@@ -110,7 +135,7 @@ function MechanismCard({
       {!isCompatible && failedAxioms.length > 0 && (
         <div className="mt-3 p-2 bg-red-50 rounded text-xs text-red-700">
           <strong>Why filtered:</strong> Does not satisfy{' '}
-          {failedAxioms.map((id) => votingAxioms.find((a) => a.id === id)?.name).join(', ')}
+          {failedAxioms.map((id) => axioms.find((a) => a.id === id)?.name).join(', ')}
         </div>
       )}
     </div>
@@ -120,11 +145,56 @@ function MechanismCard({
 export function MechanismSelect() {
   const navigate = useNavigate();
   const { session, setMechanism } = useSession();
-  const { selectedAxioms, selectedMechanism } = session;
+  const { selectedAxioms, selectedMechanism, problemType } = session;
   const [showAll, setShowAll] = useState(false);
 
-  const compatibleMechanisms = getCompatibleMechanisms(selectedAxioms);
-  const incompatibleMechanisms = votingMechanisms.filter(
+  const isFairDivision = problemType === 'fair-division';
+  const isAllocation = problemType === 'allocation';
+  const isMatching = problemType === 'matching';
+
+  // Select the appropriate mechanisms, axioms, and compatibility functions
+  const mechanisms = isMatching
+    ? matchingMechanisms
+    : isAllocation
+    ? allocationMechanisms
+    : isFairDivision
+    ? fairDivisionMechanisms
+    : votingMechanisms;
+  const axioms = isMatching
+    ? matchingAxioms
+    : isAllocation
+    ? allocationAxioms
+    : isFairDivision
+    ? fairDivisionAxioms
+    : votingAxioms;
+  const getCompatible = isMatching
+    ? getCompatibleMatchingMechanisms
+    : isAllocation
+    ? getCompatibleAllocationMechanisms
+    : isFairDivision
+    ? getCompatibleFairDivisionMechanisms
+    : getCompatibleMechanisms;
+  const getFailed = isMatching
+    ? getFailedMatchingAxioms
+    : isAllocation
+    ? getFailedAllocationAxioms
+    : isFairDivision
+    ? getFailedFairDivisionAxioms
+    : getFailedAxioms;
+  const satisfiesAxiom = isMatching
+    ? matchingMechanismSatisfiesAxiom
+    : isAllocation
+    ? allocationMechanismSatisfiesAxiom
+    : isFairDivision
+    ? fairDivisionMechanismSatisfiesAxiom
+    : mechanismSatisfiesAxiom;
+
+  const compatibleMechanisms = useMemo(
+    () => getCompatible(selectedAxioms),
+    [selectedAxioms, getCompatible]
+  );
+
+  const incompatibleMechanisms = mechanisms.filter(
     (m) => !compatibleMechanisms.includes(m.id)
   );
 
@@ -136,7 +206,16 @@ export function MechanismSelect() {
 
   const handleContinue = () => {
     if (selectedMechanism) {
-      navigate('/input');
+      // Navigate to the appropriate input page based on problem type
+      if (isMatching) {
+        navigate('/matching-input');
+      } else if (isAllocation) {
+        navigate('/allocation-input');
+      } else if (isFairDivision) {
+        navigate('/fair-division-input');
+      } else {
+        navigate('/input');
+      }
     }
   };
 
@@ -165,7 +244,7 @@ export function MechanismSelect() {
           <h2 className="font-medium text-slate-800 mb-2">Your Requirements</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             {selectedAxioms.map((axiomId) => {
-              const axiom = votingAxioms.find((a) => a.id === axiomId);
+              const axiom = axioms.find((a) => a.id === axiomId);
               return (
                 <span
                   key={axiomId}
@@ -177,13 +256,13 @@ export function MechanismSelect() {
             })}
           </div>
           <p className="text-sm text-slate-600">
-            {compatibleMechanisms.length === votingMechanisms.length
+            {compatibleMechanisms.length === mechanisms.length
               ? 'All mechanisms satisfy your selected axioms.'
               : compatibleMechanisms.length === 0
                 ? 'No mechanisms satisfy all your selected axioms. Go back to adjust your requirements.'
-                : `${compatibleMechanisms.length} of ${votingMechanisms.length} mechanisms satisfy all your requirements.`}
+                : `${compatibleMechanisms.length} of ${mechanisms.length} mechanisms satisfy all your requirements.`}
           </p>
-          {incompatibleMechanisms.length > 0 && incompatibleMechanisms.length < votingMechanisms.length && (
+          {incompatibleMechanisms.length > 0 && incompatibleMechanisms.length < mechanisms.length && (
             <p className="text-xs text-slate-500 mt-2">
               Filtered out: {incompatibleMechanisms.map((m) => m.name).join(', ')}
             </p>
@@ -205,7 +284,7 @@ export function MechanismSelect() {
             {selectedAxioms.length > 0 ? 'Compatible Mechanisms' : 'All Mechanisms'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {votingMechanisms
+            {mechanisms
               .filter((m) => compatibleMechanisms.includes(m.id))
               .map((mechanism) => (
                 <MechanismCard
@@ -217,6 +296,8 @@ export function MechanismSelect() {
                   failedAxioms={[]}
                   onSelect={() => handleSelect(mechanism.id)}
                   showAllMode={showAll}
+                  axioms={axioms}
+                  satisfiesAxiom={satisfiesAxiom}
                 />
               ))}
           </div>
@@ -238,9 +319,11 @@ export function MechanismSelect() {
                 isCompatible={false}
                 isSelected={false}
                 selectedAxioms={selectedAxioms}
-                failedAxioms={getFailedAxioms(mechanism.id, selectedAxioms)}
+                failedAxioms={getFailed(mechanism.id, selectedAxioms)}
                 onSelect={() => {}}
                 showAllMode={showAll}
+                axioms={axioms}
+                satisfiesAxiom={satisfiesAxiom}
               />
             ))}
           </div>
