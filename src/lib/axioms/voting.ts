@@ -89,7 +89,7 @@ export const votingAxioms: Axiom[] = [
     tradeoffWarning:
       'By the Gibbard-Satterthwaite theorem, no non-dictatorial voting rule with 3+ candidates is fully strategyproof for ranked ballots.',
     category: 'strategy',
-    applicableTo: ['voting', 'allocation'],
+    applicableTo: ['voting', 'allocation', 'fair-division'],
   },
   {
     id: 'monotonicity',

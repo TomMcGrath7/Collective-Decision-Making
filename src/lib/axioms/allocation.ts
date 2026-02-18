@@ -78,7 +78,7 @@ export const allocationAxioms: Axiom[] = [
     applicableTo: ['allocation'],
   },
   {
-    id: 'strategy-proofness-alloc',
+    id: 'strategyproofness',
     name: 'Strategy-Proofness',
     description:
       'Agents cannot benefit by misreporting their demand or weight.',
