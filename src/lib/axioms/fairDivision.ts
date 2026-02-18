@@ -54,8 +54,8 @@ export const fairDivisionAxioms: Axiom[] = [
     applicableTo: ['fair-division'],
   },
   {
-    id: 'truthfulness-fd',
-    name: 'Truthfulness',
+    id: 'strategyproofness',
+    name: 'Strategy-Proofness',
     description:
       'Agents cannot benefit by misrepresenting their valuations.',
     plainLanguage:
@@ -63,7 +63,7 @@ export const fairDivisionAxioms: Axiom[] = [
     formalDefinition:
       'For all agents i, reporting true valuations vi is a dominant strategy: the allocation under truthful reporting is at least as good as under any misreport v\'i.',
     tradeoffWarning:
-      'Perfect truthfulness is rare in fair division. Many mechanisms are manipulable if agents know each other\'s preferences.',
+      'Perfect strategy-proofness is rare in fair division. Many mechanisms are manipulable if agents know each other\'s preferences.',
     category: 'strategy',
     applicableTo: ['fair-division'],
   },
