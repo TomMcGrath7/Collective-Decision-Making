@@ -1158,7 +1158,7 @@ export function Results() {
 
   const isVoting = problemType === 'voting';
   const isFairDivision = problemType === 'fair-division';
-  const isAllocation = problemType === 'allocation';
+  const isAllocation = problemType === 'claims';
   const isMatching = problemType === 'matching';
 
   const votingMechanism = isVoting ? votingMechanisms.find((m) => m.id === selectedMechanism) : null;

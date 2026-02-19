@@ -11,17 +11,17 @@ const problems: ProblemDefinition[] = [
     icon: '🗳️',
   },
   {
-    id: 'allocation',
-    name: 'Resource Allocation',
+    id: 'claims',
+    name: 'Claims Problems',
     description:
-      'Do you need to split something like time or money? Divide resources among participants fairly. Examples: splitting costs, dividing inheritance, allocating budget.',
+      'Do agents have competing claims on a limited resource? Divide an endowment among claimants when full satisfaction is impossible. Examples: bankruptcy, estate division, budget shortfalls, prize distribution.',
     icon: '📊',
   },
   {
     id: 'fair-division',
     name: 'Fair Division',
     description:
-      'Do you need to split something like cake? Divide a single continuous resource among people so everyone feels they got a fair share. Examples: cake cutting, splitting rent, dividing land.',
+      'Do you need to divide a good where people may value parts differently? Split a heterogeneous resource so everyone feels they got a fair share. Examples: splitting rent, dividing an estate, cake cutting.',
     icon: '🍰',
   },
   {
@@ -53,7 +53,7 @@ export function ProblemSelect() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {problems.map((problem) => {
-          const isEnabled = problem.id === 'voting' || problem.id === 'fair-division' || problem.id === 'allocation' || problem.id === 'matching';
+          const isEnabled = problem.id === 'voting' || problem.id === 'fair-division' || problem.id === 'claims' || problem.id === 'matching';
           return (
             <button
               key={problem.id}

@@ -1,5 +1,5 @@
 // Problem Types
-export type ProblemType = 'voting' | 'allocation' | 'fair-division' | 'matching';
+export type ProblemType = 'voting' | 'claims' | 'fair-division' | 'matching';
 
 export interface ProblemDefinition {
   id: ProblemType;

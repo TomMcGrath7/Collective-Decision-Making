@@ -5,7 +5,7 @@ export const fairDivisionAxioms: Axiom[] = [
     id: 'proportionality',
     name: 'Proportionality',
     description:
-      'Each agent receives a share worth at least 1/n of the total value (from their own perspective).',
+      'Each agent receives a share worth at least 1/n of the total value (from their own perspective). Introduced by Steinhaus (1948) as the foundational fairness requirement for cake cutting.',
     plainLanguage:
       'Everyone gets their fair share. With n people, each person should feel they got at least 1/n of the total value.',
     formalDefinition:
@@ -17,13 +17,13 @@ export const fairDivisionAxioms: Axiom[] = [
     id: 'envy-freeness',
     name: 'Envy-Freeness',
     description:
-      'No agent prefers another agent\'s allocation to their own.',
+      'No agent prefers another agent\'s allocation to their own. A stronger requirement than proportionality; envy-free divisions for n > 2 agents require unbounded cuts (Brams & Taylor, 1995).',
     plainLanguage:
       'No jealousy allowed. Everyone is happy with what they got - nobody wishes they had someone else\'s portion instead.',
     formalDefinition:
       'For all agents i and j, vi(Bi) >= vi(Bj), where Bi is i\'s bundle and vi is i\'s valuation function.',
     tradeoffWarning:
-      'Envy-freeness implies proportionality, but is a stronger requirement. Achieving it may require more complex mechanisms.',
+      'Envy-freeness implies proportionality, but is a stronger requirement. Achieving it for n > 2 agents may require complex, unbounded procedures.',
     category: 'fairness',
     applicableTo: ['fair-division'],
   },
@@ -31,7 +31,7 @@ export const fairDivisionAxioms: Axiom[] = [
     id: 'equitability',
     name: 'Equitability',
     description:
-      'All agents receive allocations of equal value according to their own valuations.',
+      'All agents receive allocations of equal subjective value — each person feels they got the same fraction of total value. Central to the Adjusted Winner procedure (Brams & Taylor, 1996).',
     plainLanguage:
       'Everyone equally satisfied. Each person feels they got the same proportion of total value (e.g., everyone feels they got 50%).',
     formalDefinition:

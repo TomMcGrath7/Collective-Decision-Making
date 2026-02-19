@@ -149,41 +149,41 @@ export function MechanismSelect() {
   const [showAll, setShowAll] = useState(false);
 
   const isFairDivision = problemType === 'fair-division';
-  const isAllocation = problemType === 'allocation';
+  const isClaims = problemType === 'claims';
   const isMatching = problemType === 'matching';
 
   // Select the appropriate mechanisms, axioms, and compatibility functions
   const mechanisms = isMatching
     ? matchingMechanisms
-    : isAllocation
+    : isClaims
     ? allocationMechanisms
     : isFairDivision
     ? fairDivisionMechanisms
     : votingMechanisms;
   const axioms = isMatching
     ? matchingAxioms
-    : isAllocation
+    : isClaims
     ? allocationAxioms
     : isFairDivision
     ? fairDivisionAxioms
     : votingAxioms;
   const getCompatible = isMatching
     ? getCompatibleMatchingMechanisms
-    : isAllocation
+    : isClaims
     ? getCompatibleAllocationMechanisms
     : isFairDivision
     ? getCompatibleFairDivisionMechanisms
     : getCompatibleMechanisms;
   const getFailed = isMatching
     ? getFailedMatchingAxioms
-    : isAllocation
+    : isClaims
     ? getFailedAllocationAxioms
     : isFairDivision
     ? getFailedFairDivisionAxioms
     : getFailedAxioms;
   const satisfiesAxiom = isMatching
     ? matchingMechanismSatisfiesAxiom
-    : isAllocation
+    : isClaims
     ? allocationMechanismSatisfiesAxiom
     : isFairDivision
     ? fairDivisionMechanismSatisfiesAxiom
@@ -209,7 +209,7 @@ export function MechanismSelect() {
       // Navigate to the appropriate input page based on problem type
       if (isMatching) {
         navigate('/matching-input');
-      } else if (isAllocation) {
+      } else if (isClaims) {
         navigate('/allocation-input');
       } else if (isFairDivision) {
         navigate('/fair-division-input');
