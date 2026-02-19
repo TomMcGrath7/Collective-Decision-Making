@@ -11,7 +11,7 @@ export const votingAxioms: Axiom[] = [
     formalDefinition:
       'A mechanism is Pareto efficient if it never selects an outcome x when there exists another outcome y such that all voters weakly prefer y and at least one strictly prefers y.',
     category: 'efficiency',
-    applicableTo: ['voting', 'allocation', 'fair-division'],
+    applicableTo: ['voting', 'claims', 'fair-division'],
   },
   {
     id: 'condorcet-winner',
@@ -89,7 +89,7 @@ export const votingAxioms: Axiom[] = [
     tradeoffWarning:
       'By the Gibbard-Satterthwaite theorem, no non-dictatorial voting rule with 3+ candidates is fully strategyproof for ranked ballots.',
     category: 'strategy',
-    applicableTo: ['voting', 'allocation', 'fair-division'],
+    applicableTo: ['voting', 'claims', 'fair-division'],
   },
   {
     id: 'monotonicity',

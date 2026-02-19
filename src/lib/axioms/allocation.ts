@@ -1,95 +1,95 @@
 import type { Axiom } from '../../types';
 
 export const allocationAxioms: Axiom[] = [
-  // Standard Axioms (adapted for resource allocation)
+  // Standard Claims-Problem Axioms
   {
     id: 'proportionality-alloc',
     name: 'Proportionality',
     description:
-      'Each agent receives at least 1/n of the total resource (where n is the number of agents).',
+      'Each claimant receives an award at least proportional to their claim relative to total claims, scaled by the available endowment.',
     plainLanguage:
-      'Everyone gets their fair share. With n people sharing, each person is guaranteed at least 1/n of the total resource.',
+      'Fair shares by entitlement. Each claimant receives an award in proportion to what they are owed — larger claims yield larger awards.',
     formalDefinition:
-      'For n agents sharing resource R, agent i receives allocation x_i where x_i >= R/n.',
+      'For n claimants with claims c_1, ..., c_n and endowment E: claimant i receives x_i = (c_i / sum(c_j)) * E when E < sum(c_j).',
     category: 'fairness',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
   {
     id: 'pareto-efficiency-alloc',
     name: 'Pareto Efficiency',
     description:
-      'No reallocation can make one agent better off without making another worse off.',
+      'No reallocation of the endowment can make one claimant better off without making another worse off.',
     plainLanguage:
-      'No waste. The allocation is optimal - there\'s no way to give someone more without taking from someone else.',
+      'No waste. The division of the endowment is optimal — there is no way to give one claimant more without reducing another\'s award.',
     formalDefinition:
-      'There exists no alternative allocation (x\'_1, ..., x\'_n) where x\'_i >= x_i for all i, with strict inequality for some i.',
+      'There exists no alternative award vector (x\'_1, ..., x\'_n) where x\'_i >= x_i for all i, with strict inequality for some i.',
     category: 'efficiency',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
   {
     id: 'envy-freeness-alloc',
     name: 'Envy-Freeness',
     description:
-      'No agent prefers another agent\'s allocation to their own.',
+      'No claimant prefers another claimant\'s award to their own.',
     plainLanguage:
-      'No jealousy. Everyone is satisfied with what they got - nobody wishes they had someone else\'s share instead.',
+      'No jealousy. Every claimant is satisfied with their award — nobody wishes they had received someone else\'s share instead.',
     formalDefinition:
-      'For all agents i and j: agent i values their allocation x_i at least as much as x_j.',
+      'For all claimants i and j: claimant i values their award x_i at least as much as x_j.',
     tradeoffWarning:
-      'With different demands, envy-freeness may not always be achievable while satisfying other constraints.',
+      'With heterogeneous claims, envy-freeness may not always be achievable while satisfying other desiderata.',
     category: 'fairness',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
-  // Resource-Specific Axioms
+  // Claims-Specific Axioms
   {
     id: 'share-guarantee',
     name: 'Share Guarantee',
     description:
-      'Each agent receives a minimum guaranteed share regardless of other agents\' demands.',
+      'Each claimant receives a minimum guaranteed award regardless of other claimants\' entitlements.',
     plainLanguage:
-      'Baseline protection. Even if others demand a lot, you\'re guaranteed a minimum amount of the resource.',
+      'Baseline protection. Even when others hold large claims, every claimant is guaranteed a minimum share of the endowment.',
     formalDefinition:
-      'For agent i with weight w_i in a system with total weight W: x_i >= (w_i/W) * R, regardless of other agents\' demands.',
+      'For claimant i with weight w_i in a system with total weight W and endowment E: x_i >= (w_i/W) * E, regardless of other claimants\' demands.',
     category: 'fairness',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
   {
     id: 'work-conservation',
-    name: 'Work Conservation',
+    name: 'Exhaustion of Endowment',
     description:
-      'No resource is left unallocated if there is still demand for it.',
+      'The entire endowment is distributed — no resources are left unawarded when there are unsatisfied claims.',
     plainLanguage:
-      'Use it all. If someone wants more and there\'s resource available, it gets allocated - nothing sits idle.',
+      'Distribute everything. As long as some claimant is not fully satisfied, the endowment is fully exhausted.',
     formalDefinition:
-      'If sum(demands) > 0 and sum(allocations) < R, then for some agent i: x_i < demand_i implies x_i = share of remaining capacity.',
+      'If sum(claims) > 0 and sum(awards) < E, then for some claimant i: x_i < c_i and x_i increases until E is fully allocated.',
     category: 'efficiency',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
   {
     id: 'max-min-fairness-axiom',
-    name: 'Max-Min Fairness',
+    name: 'Equal Awards Priority',
     description:
-      'Maximize the minimum allocation any agent receives before improving larger allocations.',
+      'Maximise the minimum award any claimant receives before improving larger awards.',
     plainLanguage:
-      'Help the worst-off first. The allocation prioritizes improving the smallest shares before giving more to those who already have more.',
+      'Help the worst-off first. The rule prioritises improving the smallest awards before giving more to those who already have larger shares.',
     formalDefinition:
-      'An allocation is max-min fair if for each agent i, x_i cannot be increased without decreasing x_j for some agent j where x_j <= x_i.',
+      'An award vector is equal-awards optimal if for each claimant i, x_i cannot be increased without decreasing x_j for some claimant j where x_j <= x_i.',
     category: 'fairness',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
   {
     id: 'strategyproofness',
     name: 'Strategy-Proofness',
     description:
-      'Agents cannot benefit by misreporting their demand or weight.',
+      'Claimants cannot benefit by misreporting their entitlement or claim size.',
     plainLanguage:
-      'Honesty pays. You can\'t game the system by lying about how much you need - being truthful always gives you the best outcome.',
+      'Honesty pays. No claimant can obtain a larger award by inflating or deflating their reported claim — truthful reporting is always optimal.',
     formalDefinition:
-      'For all agents i, reporting true demand d_i is a dominant strategy: the allocation under truthful reporting is at least as good as under any misreport d\'_i.',
+      'For all claimants i, reporting true claim c_i is a dominant strategy: the award under truthful reporting is at least as good as under any misreport c\'_i.',
     tradeoffWarning:
-      'Perfect strategy-proofness can conflict with efficiency in some allocation mechanisms.',
+      'Perfect strategy-proofness can conflict with efficiency in some claims-problem rules.',
     category: 'strategy',
-    applicableTo: ['allocation'],
+    applicableTo: ['claims'],
   },
 ];
 

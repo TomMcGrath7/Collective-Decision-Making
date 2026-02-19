@@ -189,48 +189,48 @@ export function AxiomSelect() {
   const { selectedAxioms, problemType } = session;
 
   const isFairDivision = problemType === 'fair-division';
-  const isAllocation = problemType === 'allocation';
+  const isClaims = problemType === 'claims';
   const isMatching = problemType === 'matching';
 
   // Select the appropriate mechanisms and compatibility functions
   const mechanisms = isMatching
     ? matchingMechanisms
-    : isAllocation
+    : isClaims
     ? allocationMechanisms
     : isFairDivision
     ? fairDivisionMechanisms
     : votingMechanisms;
   const getAxiomsForCategory = isMatching
     ? getMatchingAxiomsByCategory
-    : isAllocation
+    : isClaims
     ? getAllocationAxiomsByCategory
     : isFairDivision
     ? getFairDivisionAxiomsByCategory
     : getAxiomsByCategory;
   const getCompatible = isMatching
     ? getCompatibleMatchingMechanisms
-    : isAllocation
+    : isClaims
     ? getCompatibleAllocationMechanisms
     : isFairDivision
     ? getCompatibleFairDivisionMechanisms
     : getCompatibleMechanisms;
   const wouldEliminateAll = isMatching
     ? wouldEliminateAllMatchingMechanisms
-    : isAllocation
+    : isClaims
     ? wouldEliminateAllAllocationMechanisms
     : isFairDivision
     ? wouldEliminateAllFairDivisionMechanisms
     : wouldEliminateAllMechanisms;
   const getFailed = isMatching
     ? getFailedMatchingAxioms
-    : isAllocation
+    : isClaims
     ? getFailedAllocationAxioms
     : isFairDivision
     ? getFailedFairDivisionAxioms
     : getFailedAxioms;
   const categoryDescriptions = isMatching
     ? matchingCategoryDescriptions
-    : isAllocation
+    : isClaims
     ? allocationCategoryDescriptions
     : isFairDivision
     ? fairDivisionCategoryDescriptions
@@ -274,7 +274,7 @@ export function AxiomSelect() {
           </h1>
         </div>
         <p className="text-slate-600 mb-6">
-          Select the fairness axioms you want your {isMatching ? 'matching' : isAllocation ? 'allocation' : isFairDivision ? 'division' : 'decision'} mechanism to satisfy. As you
+          Select the fairness axioms you want your {isMatching ? 'matching' : isClaims ? 'claims' : isFairDivision ? 'division' : 'decision'} mechanism to satisfy. As you
           select axioms, mechanisms that don't satisfy them will be eliminated.
         </p>
 
@@ -321,8 +321,8 @@ export function AxiomSelect() {
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                 <p className="text-sm text-red-700 font-medium">No mechanisms available</p>
                 <p className="text-xs text-red-600 mt-1">
-                  Your selected axioms are incompatible with all {isMatching ? 'matching' : isAllocation ? 'allocation' : isFairDivision ? 'fair division' : 'voting'} mechanisms.
-                  {isAllocation || isFairDivision || isMatching
+                  Your selected axioms are incompatible with all {isMatching ? 'matching' : isClaims ? 'claims' : isFairDivision ? 'fair division' : 'voting'} mechanisms.
+                  {isClaims || isFairDivision || isMatching
                     ? ' Try selecting fewer axioms or different combinations.'
                     : ' This often happens due to impossibility theorems in social choice theory.'}
                 </p>
@@ -417,19 +417,20 @@ export function AxiomSelect() {
             </div>
           )}
 
-          {/* Allocation-specific info */}
-          {isAllocation && (
+          {/* Claims-specific info */}
+          {isClaims && (
             <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
               <h3 className="font-medium text-purple-800 text-sm mb-2">
-                About Resource Allocation
+                About Claims Problems
               </h3>
               <p className="text-xs text-purple-700 mb-2">
-                Resource allocation deals with dividing divisible resources (bandwidth, budget, computing time)
-                among agents with different demands. Unlike fair division, agents specify how much they want.
+                Claims problems study how to divide a resource among agents with legitimate entitlements when
+                the total claims exceed the available endowment. Foundational results include the Proportional
+                Rule (O'Neill, 1982) and axiomatic characterizations by Moulin (2000).
               </p>
               <p className="text-xs text-purple-700">
-                Key considerations include work conservation (use all resources if there's demand) and
-                fairness guarantees (minimum shares regardless of others' demands).
+                Key properties include exhaustion of the endowment (the full resource is distributed) and
+                fairness guarantees (minimum shares regardless of others' claims).
               </p>
             </div>
           )}
@@ -462,15 +463,15 @@ export function AxiomSelect() {
             </div>
           )}
 
-          {isAllocation && (
+          {isClaims && (
             <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
               <h3 className="font-medium text-purple-800 text-sm mb-2">
                 Mechanism Comparison
               </h3>
               <ul className="text-xs text-purple-700 space-y-1">
-                <li>• <strong>Proportional Fairness</strong> = Allocates by demand ratio</li>
-                <li>• <strong>Max-Min Fairness</strong> = Maximizes minimum allocation</li>
-                <li>• <strong>Weighted Fair Queuing</strong> = Priority-based allocation</li>
+                <li>• <strong>Proportional Rule</strong> = Awards proportional to claim size</li>
+                <li>• <strong>Constrained Equal Awards</strong> = Equal shares, capped at claims</li>
+                <li>• <strong>Weighted Proportional Rule</strong> = Priority-weighted proportional awards</li>
               </ul>
             </div>
           )}

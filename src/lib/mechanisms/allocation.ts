@@ -3,48 +3,49 @@ import type { Mechanism, DivisibleAllocationProblem, DivisibleAllocationResult, 
 export const allocationMechanisms: Mechanism[] = [
   {
     id: 'proportional-fairness',
-    name: 'Proportional Fairness',
+    name: 'Proportional Rule',
     description:
-      'Allocates resources proportionally to demand, balancing efficiency with fairness.',
+      'Divides the endowment proportionally to claims, so each claimant receives the same fraction of their entitlement.',
     howItWorks:
-      'Each agent receives a share proportional to their demand. If total demand exceeds supply, allocations are scaled down proportionally. If total demand is less than supply, each agent gets their full demand. This maximizes the product of utilities (Nash bargaining solution).',
+      'Each claimant receives a share proportional to their claim. When total claims exceed the endowment, each award is scaled down by the same factor (endowment / total claims). Corresponds to the Nash bargaining solution and is the classic Proportional Rule of O\'Neill (1982) and Moulin (2000).',
     realWorldExamples: [
+      'Bankruptcy proceedings dividing an estate among creditors',
+      'Budget shortfalls distributed proportionally across departments',
+      'Prize pools divided by ticket count',
       'Bandwidth allocation in computer networks',
-      'Budget distribution based on department requests',
-      'Splitting shared resources in cloud computing',
     ],
-    problemType: 'allocation',
+    problemType: 'claims',
     satisfiedAxioms: ['pareto-efficiency-alloc', 'proportionality-alloc', 'work-conservation'],
   },
   {
     id: 'max-min-fairness',
-    name: 'Max-Min Fairness',
+    name: 'Constrained Equal Awards',
     description:
-      'Iteratively maximizes the minimum allocation, ensuring the worst-off agent is as well-off as possible.',
+      'Awards each claimant an equal share of the endowment, subject to no one receiving more than their claim.',
     howItWorks:
-      'Uses a progressive filling algorithm: start with equal allocations for all, then increase equally until an agent reaches their demand (they become "satisfied"). Continue increasing for unsatisfied agents only. This maximizes the minimum allocation while being work-conserving.',
+      'Uses a progressive filling algorithm: raise all awards equally until a claimant\'s award reaches their claim (they become satisfied and receive no more). Continue raising awards for remaining claimants until the endowment is exhausted. Equivalent to the Constrained Equal Awards rule (Aumann & Maschler, 1985), which maximises the minimum award.',
     realWorldExamples: [
-      'Network bandwidth allocation (TCP fairness)',
-      'CPU scheduling in operating systems',
-      'Fair queuing in packet-switched networks',
+      'Estate division where small creditors are made whole first',
+      'Fair queuing in packet-switched networks (TCP fairness)',
+      'Emergency resource distribution prioritising smallest needs',
     ],
-    problemType: 'allocation',
+    problemType: 'claims',
     satisfiedAxioms: ['share-guarantee', 'max-min-fairness-axiom', 'work-conservation', 'envy-freeness-alloc'],
   },
   {
     id: 'weighted-fair-queuing',
-    name: 'Weighted Fair Queuing',
+    name: 'Weighted Proportional Rule',
     description:
-      'Allocates resources proportionally to agent weights/priorities.',
+      'Allocates the endowment proportionally to claimant weights, reflecting differing priority or seniority.',
     howItWorks:
-      'Each agent is assigned a weight representing their priority or entitlement. The resource is divided such that each agent receives (their weight / sum of all weights) of the total. If an agent\'s share exceeds their demand, the excess is redistributed to others proportionally.',
+      'Each claimant is assigned a weight representing their priority or seniority. The endowment is divided so each claimant receives (their weight / total weight) of the total. If a claimant\'s weighted share exceeds their claim, the surplus is redistributed to others proportionally to their weights.',
     realWorldExamples: [
-      'Quality of Service (QoS) in networks',
-      'Priority-based CPU scheduling',
-      'Tiered service plans (premium vs basic)',
-      'Weighted voting power in shareholder decisions',
+      'Secured vs. unsecured creditors in bankruptcy (different seniority)',
+      'Shareholder distributions weighted by share class',
+      'Quality of Service (QoS) bandwidth allocation',
+      'Tiered benefit plans with priority tiers',
     ],
-    problemType: 'allocation',
+    problemType: 'claims',
     satisfiedAxioms: ['proportionality-alloc', 'work-conservation', 'pareto-efficiency-alloc', 'share-guarantee'],
   },
 ];

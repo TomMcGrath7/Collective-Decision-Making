@@ -21,9 +21,9 @@ export const fairDivisionMechanisms: Mechanism[] = [
     id: 'moving-knife',
     name: 'Moving Knife (Dubins-Spanier)',
     description:
-      'A knife moves across the item; any player can call "stop" when the portion on one side equals their fair share.',
+      'A knife moves across the item; any player can call "stop" when the portion on one side equals their fair share. Introduced by Dubins & Spanier (1961) as the first continuous proportional procedure for n agents.',
     howItWorks:
-      'Imagine a knife moving slowly from left to right across a cake. As soon as any player thinks the left portion equals 1/n of the total value (their fair share), they call "stop" and receive that piece. The process continues with remaining players and the remaining cake. This guarantees everyone gets at least 1/n by their own valuation.',
+      'Imagine a knife moving slowly from left to right across a cake. As soon as any player thinks the left portion equals 1/n of the total value (their fair share), they call "stop" and receive that piece. The process continues with remaining players and the remaining cake. This guarantees everyone gets at least 1/n by their own valuation (Dubins & Spanier, 1961).',
     realWorldExamples: [
       'Dividing a long submarine sandwich among friends',
       'Splitting a timeline or schedule among team members',
@@ -36,9 +36,9 @@ export const fairDivisionMechanisms: Mechanism[] = [
     id: 'adjusted-winner',
     name: 'Adjusted Winner',
     description:
-      'Both parties assign points to items; items go to whoever valued them more, with a final adjustment for fairness.',
+      'Both parties assign points to items; items go to whoever valued them more, with a final adjustment for fairness. Developed by Brams & Taylor (1996), it uniquely achieves proportionality, envy-freeness, equitability, and Pareto efficiency for two agents.',
     howItWorks:
-      'Each person distributes 100 points across the items being divided based on how much they value each. Items are initially given to whoever assigned more points. If the initial allocation is unequal, the item with the closest point ratio is split proportionally until both have equal total points. This achieves multiple fairness properties simultaneously.',
+      'Each person distributes 100 points across the items being divided based on how much they value each. Items are initially given to whoever assigned more points. If the initial allocation is unequal, the item with the closest point ratio is split proportionally until both have equal total points. This achieves multiple fairness properties simultaneously (Brams & Taylor, 1996).',
     realWorldExamples: [
       'Divorce settlements dividing marital property',
       'Business partnership dissolutions',

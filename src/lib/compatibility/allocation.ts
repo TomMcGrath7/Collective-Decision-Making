@@ -19,7 +19,7 @@ function buildAllocationCompatibilityMatrix(): CompatibilityMatrix {
   });
 
   return {
-    problemType: 'allocation',
+    problemType: 'claims',
     axioms: axiomIds,
     mechanisms: mechanismIds,
     matrix,
