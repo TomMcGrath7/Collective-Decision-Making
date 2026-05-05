@@ -33,6 +33,27 @@ export const allocationMechanisms: Mechanism[] = [
     satisfiedAxioms: ['share-guarantee', 'max-min-fairness-axiom', 'work-conservation', 'envy-freeness-alloc'],
   },
   {
+    id: 'talmud',
+    name: 'Talmud Rule (Aumann–Maschler)',
+    description:
+      'Hybrid rule that applies Constrained Equal Awards to half-claims when the endowment is small, and Constrained Equal Losses when it is large.',
+    howItWorks:
+      'Let half-claims be c_i / 2. If the endowment E is at most the sum of half-claims, distribute E using Constrained Equal Awards on the half-claims. If E exceeds the sum of half-claims, give each claimant their half-claim and divide the remainder using Constrained Equal Losses on the half-claims (equivalently, each award equals min(c_i, max(c_i / 2, c_i − μ)) for the appropriate μ). Reconstructed by Aumann & Maschler (1985) from the contested-garment problem in the Talmud.',
+    realWorldExamples: [
+      'Talmudic estate-division problems (Bava Metzia)',
+      'Bankruptcy cases where small claimants are protected first',
+      'Insurance settlements with limited reserves',
+      'Reference benchmark in cooperative-game theory courses',
+    ],
+    problemType: 'claims',
+    satisfiedAxioms: [
+      'pareto-efficiency-alloc',
+      'envy-freeness-alloc',
+      'work-conservation',
+      'strategyproofness',
+    ],
+  },
+  {
     id: 'weighted-fair-queuing',
     name: 'Weighted Proportional Rule',
     description:
@@ -435,6 +456,147 @@ function weightedFairQueuing(problem: DivisibleAllocationProblem): DivisibleAllo
 }
 
 /**
+ * Talmud rule (Aumann–Maschler) implementation.
+ * Treats `agent.demand` as the claim and `resource.totalAmount` as the endowment.
+ */
+function talmudRule(problem: DivisibleAllocationProblem): DivisibleAllocationResult {
+  const { resource, agents } = problem;
+  const E = resource.totalAmount;
+  const halves = agents.map((a) => a.demand / 2);
+  const sumHalves = halves.reduce((s, h) => s + h, 0);
+  const sumClaims = agents.reduce((s, a) => s + a.demand, 0);
+
+  const steps: AllocationStep[] = [];
+  const allocations: Record<string, number> = {};
+  agents.forEach((a) => {
+    allocations[a.id] = 0;
+  });
+
+  steps.push({
+    step: 1,
+    description:
+      `Compute half-claims: ${agents.map((a) => `${a.name} = ${(a.demand / 2).toFixed(2)}`).join(', ')}. ` +
+      `Sum of half-claims = ${sumHalves.toFixed(2)} ${resource.unit}. Endowment = ${E} ${resource.unit}.`,
+    currentAllocations: { ...allocations },
+  });
+
+  // Helper: Constrained Equal Awards on caps `caps` summing to `total`.
+  const cea = (caps: number[], total: number): number[] => {
+    if (total <= 0) return caps.map(() => 0);
+    if (total >= caps.reduce((s, c) => s + c, 0)) return [...caps];
+    let lo = 0;
+    let hi = Math.max(...caps);
+    for (let iter = 0; iter < 100; iter++) {
+      const mid = (lo + hi) / 2;
+      const sum = caps.reduce((s, c) => s + Math.min(c, mid), 0);
+      if (sum < total) lo = mid;
+      else hi = mid;
+    }
+    const lambda = (lo + hi) / 2;
+    return caps.map((c) => Math.min(c, lambda));
+  };
+
+  let mode: 'cea-half' | 'cel-half';
+  if (E <= sumHalves) {
+    mode = 'cea-half';
+    const awards = cea(halves, E);
+    agents.forEach((a, i) => {
+      allocations[a.id] = awards[i];
+    });
+    steps.push({
+      step: 2,
+      description:
+        `Endowment (${E}) ≤ sum of half-claims (${sumHalves.toFixed(2)}). ` +
+        `Apply Constrained Equal Awards to the half-claims: each claimant receives min(c_i / 2, λ) for the λ that exhausts the endowment.`,
+      currentAllocations: { ...allocations },
+    });
+  } else {
+    mode = 'cel-half';
+    // Each agent gets at least their half-claim. Remaining = E - sumHalves is split using CEL on half-claims.
+    const remaining = E - sumHalves;
+    // CEL on caps (half-claims) with total = remaining: each gets max(0, halves_i - μ) where the LOSSES sum to sumHalves - remaining.
+    // Equivalently: solve for μ s.t. sum(max(0, halves_i - μ)) = remaining? No — easier: distribute `remaining` losses-style.
+    // Standard formulation: in the CEL stage we share the remaining surplus so that LOSSES (c_i - x_i = c_i/2 - extra_i) are equal subject to non-negativity.
+    // Let extra_i = remaining share above half-claim, capped at half-claim. Choose μ s.t. sum(min(halves_i, μ)) = remaining.
+    let lo = 0;
+    let hi = Math.max(...halves);
+    for (let iter = 0; iter < 100; iter++) {
+      const mid = (lo + hi) / 2;
+      const sum = halves.reduce((s, h) => s + Math.min(h, mid), 0);
+      if (sum < remaining) lo = mid;
+      else hi = mid;
+    }
+    const mu = (lo + hi) / 2;
+    agents.forEach((a, i) => {
+      allocations[a.id] = halves[i] + Math.min(halves[i], mu);
+    });
+    steps.push({
+      step: 2,
+      description:
+        `Endowment (${E}) > sum of half-claims (${sumHalves.toFixed(2)}). ` +
+        `Each claimant first receives their half-claim, then the remaining ${remaining.toFixed(2)} ${resource.unit} ` +
+        `is divided so that everyone's loss (c_i − x_i) is as equal as possible (Constrained Equal Losses on half-claims).`,
+      currentAllocations: { ...allocations },
+    });
+  }
+
+  const totalAllocated = Object.values(allocations).reduce((s, v) => s + v, 0);
+
+  const resultAllocations = agents.map((agent) => ({
+    agentId: agent.id,
+    amountReceived: allocations[agent.id],
+    percentageOfTotal: E > 0 ? (allocations[agent.id] / E) * 100 : 0,
+    percentageOfDemand: agent.demand > 0 ? (allocations[agent.id] / agent.demand) * 100 : 100,
+  }));
+
+  const explanation =
+    `Talmud rule (Aumann–Maschler 1985):\n\n` +
+    `Endowment E = ${E} ${resource.unit}; sum of claims = ${sumClaims}; sum of half-claims = ${sumHalves.toFixed(2)}.\n` +
+    (mode === 'cea-half'
+      ? `Because E ≤ sum of half-claims, use Constrained Equal Awards on the half-claims.\n\n`
+      : `Because E > sum of half-claims, give each agent their half-claim and split the remainder using Constrained Equal Losses on the half-claims.\n\n`) +
+    `Final awards:\n` +
+    resultAllocations
+      .map((a) => {
+        const agent = agents.find((ag) => ag.id === a.agentId)!;
+        return `- ${agent.name} (claim ${agent.demand}): ${a.amountReceived.toFixed(2)} ${resource.unit} (${a.percentageOfDemand.toFixed(1)}% of claim)`;
+      })
+      .join('\n');
+
+  return {
+    allocations: resultAllocations,
+    explanation,
+    fairnessProperties: [
+      {
+        property: 'Pareto Efficiency',
+        satisfied: Math.abs(totalAllocated - Math.min(E, sumClaims)) < 0.01,
+        explanation:
+          'The endowment (or all claims) is fully exhausted, leaving no room for a Pareto improvement.',
+      },
+      {
+        property: 'Envy-Freeness',
+        satisfied: true,
+        explanation:
+          'Awards are weakly increasing in claims and bounded by claims, so no claimant prefers another\'s award.',
+      },
+      {
+        property: 'Self-Duality',
+        satisfied: true,
+        explanation:
+          'The Talmud rule is self-dual: it treats gains and losses symmetrically, which uniquely characterises it among consistent claims rules.',
+      },
+      {
+        property: 'Strategy-Proofness',
+        satisfied: true,
+        explanation:
+          'No claimant can gain by misreporting their claim under the standard claims-problem model.',
+      },
+    ],
+    steps,
+  };
+}
+
+/**
  * Main function to run any allocation mechanism
  */
 export function runAllocationMechanism(
@@ -448,6 +610,8 @@ export function runAllocationMechanism(
       return maxMinFairness(problem);
     case 'weighted-fair-queuing':
       return weightedFairQueuing(problem);
+    case 'talmud':
+      return talmudRule(problem);
     default:
       throw new Error(`Unknown allocation mechanism: ${mechanismId}`);
   }

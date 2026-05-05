@@ -97,6 +97,32 @@ export const votingMechanisms: Mechanism[] = [
     ],
   },
   {
+    id: 'schulze',
+    name: 'Schulze Method',
+    description:
+      'A Condorcet method that selects the winner using the strongest beatpath through pairwise contests.',
+    howItWorks:
+      'Build the pairwise preference matrix. For every pair (i, j), the strength of the strongest path from i to j is the maximum over all paths of the smallest pairwise margin along that path. A candidate i beats j in the Schulze sense if the strongest path from i to j is stronger than the path from j to i. The winner beats every other candidate this way.',
+    realWorldExamples: [
+      'Wikimedia Foundation Board elections',
+      'Pirate Party internal elections (Germany, Sweden)',
+      'Ubuntu Leadership Council elections',
+      'Debian general resolutions (variant)',
+      'Software in the Public Interest board elections',
+    ],
+    problemType: 'voting',
+    satisfiedAxioms: [
+      'condorcet-winner',
+      'condorcet-loser',
+      'majority',
+      'pareto-efficiency',
+      'monotonicity',
+      'anonymity',
+      'neutrality',
+      'reversal-symmetry',
+    ],
+  },
+  {
     id: 'condorcet',
     name: 'Condorcet Method (Copeland)',
     description:
@@ -408,6 +434,93 @@ export function condorcet(problem: VotingProblem): VotingResult {
   };
 }
 
+// Schulze Method Implementation
+export function schulze(problem: VotingProblem): VotingResult {
+  const { candidates, voters } = problem;
+  const n = candidates.length;
+  const ids = candidates.map((c) => c.id);
+  const candidateNames = Object.fromEntries(candidates.map((c) => [c.id, c.name]));
+
+  const idx: Record<string, number> = {};
+  ids.forEach((id, i) => {
+    idx[id] = i;
+  });
+
+  // Pairwise preference counts: d[i][j] = voters preferring i over j
+  const d: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
+  voters.forEach((voter) => {
+    for (let i = 0; i < voter.ranking.length; i++) {
+      for (let j = i + 1; j < voter.ranking.length; j++) {
+        const a = idx[voter.ranking[i]];
+        const b = idx[voter.ranking[j]];
+        if (a !== undefined && b !== undefined) d[a][b] += 1;
+      }
+    }
+  });
+
+  // Initial path strengths
+  const p: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i !== j) p[i][j] = d[i][j] > d[j][i] ? d[i][j] : 0;
+    }
+  }
+
+  // Floyd–Warshall: strongest beatpath as max-min over paths
+  for (let k = 0; k < n; k++) {
+    for (let i = 0; i < n; i++) {
+      if (i === k) continue;
+      for (let j = 0; j < n; j++) {
+        if (j === i || j === k) continue;
+        const alt = Math.min(p[i][k], p[k][j]);
+        if (alt > p[i][j]) p[i][j] = alt;
+      }
+    }
+  }
+
+  // Schulze winners: i wins iff p[i][j] >= p[j][i] for all j != i
+  const wins: number[] = Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    let beats = 0;
+    for (let j = 0; j < n; j++) {
+      if (i !== j && p[i][j] >= p[j][i]) beats += 1;
+    }
+    wins[i] = beats;
+  }
+  const maxWins = Math.max(...wins);
+  const winners = ids.filter((_, i) => wins[i] === maxWins);
+
+  const scores: Record<string, number> = {};
+  ids.forEach((id, i) => {
+    scores[id] = wins[i];
+  });
+
+  const pairwiseLines: string[] = [];
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      pairwiseLines.push(
+        `${candidateNames[ids[i]]} vs ${candidateNames[ids[j]]}: ${d[i][j]}–${d[j][i]} (strongest path ${p[i][j]} vs ${p[j][i]})`
+      );
+    }
+  }
+
+  const explanation =
+    `The Schulze method ranks candidates by the strongest beatpath between them.\n\n` +
+    `Pairwise comparisons:\n${pairwiseLines.join('\n')}\n\n` +
+    `Beatpath wins (candidates beaten by stronger or equal path strength):\n` +
+    ids.map((id, i) => `- ${candidateNames[id]}: beats ${wins[i]} of ${n - 1}`).join('\n') +
+    `\n\n` +
+    (winners.length === 1
+      ? `${candidateNames[winners[0]]} is the Schulze winner.`
+      : `Tie among ${winners.map((w) => candidateNames[w]).join(', ')}.`);
+
+  return {
+    winner: winners.length === 1 ? winners[0] : winners,
+    scores,
+    explanation,
+  };
+}
+
 // Main function to run any voting mechanism
 export function runVotingMechanism(
   mechanismId: string,
@@ -424,6 +537,8 @@ export function runVotingMechanism(
       return approvalVoting(problem);
     case 'condorcet':
       return condorcet(problem);
+    case 'schulze':
+      return schulze(problem);
     default:
       throw new Error(`Unknown voting mechanism: ${mechanismId}`);
   }
