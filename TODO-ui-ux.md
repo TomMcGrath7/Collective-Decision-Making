@@ -6,6 +6,7 @@ Backlog of UI/UX improvements, ordered roughly by leverage (impact ÷ effort). M
 
 ## High leverage (do these first)
 
+- [ ] **Ship as an installable mobile web app (PWA)** — Manifest, service worker, offline support, home-screen install. Detailed plan in [`PLAN-mobile-app.md`](./PLAN-mobile-app.md).
 - [ ] **Drag-and-drop ranking** — Voter ranking currently uses ↑/↓ arrow buttons only, despite the helper text saying "Drag or use arrows". On mobile, ranking 5 candidates by tapping arrows is painful. Use `dnd-kit` (preferred over `react-beautiful-dnd`, which is unmaintained).
 - [ ] **Shareable URLs / permalinks** — Encode the full problem (problem type, candidates/agents, preferences, selected axioms, chosen mechanism) in the URL or a base64 query param. Killer feature for an educational tool: "send your classmate this exact scenario".
 - [ ] **Mechanism comparison view on Results** — Side-by-side "if you'd used these other mechanisms with the same ballots, here's who would have won". The README already lists this as a feature; make sure it's prominent on the Results page, not buried.
